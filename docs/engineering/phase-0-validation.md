@@ -37,7 +37,7 @@
 | Prettier | 通过 |
 | ESLint | 通过，零警告 |
 | TypeScript | 通过 |
-| Vitest | 14/14 通过 |
+| Vitest | 16/16 通过 |
 | Rustfmt | 通过 |
 | Clippy | 通过，警告视为错误 |
 | Rust tests | 3/3 通过 |
