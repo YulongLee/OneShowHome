@@ -1,5 +1,4 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { moveHouse, showHome } from "../../platform/desktop";
 import { HouseSurface } from "./HouseSurface";
@@ -16,12 +15,14 @@ describe("HouseSurface", () => {
   });
 
   it("opens Home when the house is clicked", async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
     render(<HouseSurface />);
 
-    await user.click(screen.getByRole("button", { name: "进入 OneShow Home" }));
+    fireEvent.click(screen.getByRole("button", { name: "进入 OneShow Home" }));
+    await vi.advanceTimersByTimeAsync(520);
 
     expect(showHome).toHaveBeenCalledOnce();
+    vi.useRealTimers();
   });
 
   it("starts native dragging from the move handle", () => {

@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
-import { HouseIllustration } from "../../components/HouseIllustration";
+import cottageExterior from "../../assets/house/cottage-exterior.png";
 import { getTimeOfDay } from "../../lib/time";
 import { moveHouse, showHome } from "../../platform/desktop";
 
 export function HouseSurface() {
   const timeOfDay = useMemo(() => getTimeOfDay(new Date()), []);
   const [error, setError] = useState<string | null>(null);
+  const [isEntering, setIsEntering] = useState(false);
 
   const run = async (operation: () => Promise<void>) => {
     setError(null);
@@ -16,8 +17,18 @@ export function HouseSurface() {
     }
   };
 
+  const enterHome = () => {
+    if (isEntering) return;
+    setIsEntering(true);
+    window.setTimeout(() => {
+      void run(showHome).finally(() => setIsEntering(false));
+    }, 520);
+  };
+
   return (
-    <main className={`house-surface house-surface--${timeOfDay}`}>
+    <main
+      className={`house-surface house-surface--${timeOfDay}${isEntering ? " is-entering" : ""}`}
+    >
       <button
         aria-label="拖动桌面小屋"
         className="house-move-handle"
@@ -36,11 +47,16 @@ export function HouseSurface() {
       <button
         aria-label="进入 OneShow Home"
         className="house-entry"
-        onClick={() => void run(showHome)}
+        disabled={isEntering}
+        onClick={enterHome}
         type="button"
       >
-        <span className="house-aura" />
-        <HouseIllustration timeOfDay={timeOfDay} />
+        <img
+          alt="一座亮着暖灯、Buddy 坐在门前的微缩小屋"
+          className="cottage-exterior"
+          draggable="false"
+          src={cottageExterior}
+        />
         <span className="house-hint">点击回家</span>
       </button>
 

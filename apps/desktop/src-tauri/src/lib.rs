@@ -1,9 +1,10 @@
 mod windows;
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    RunEvent, WindowEvent,
+    Emitter, RunEvent, WindowEvent,
 };
 use tauri_plugin_window_state::StateFlags;
 use windows::{hide_house, hide_main, show_house, show_main, HOUSE_WINDOW, MAIN_WINDOW};
@@ -12,6 +13,7 @@ const MENU_OPEN_HOME: &str = "open-home";
 const MENU_SHOW_HOUSE: &str = "show-house";
 const MENU_HIDE_HOUSE: &str = "hide-house";
 const MENU_QUIT: &str = "quit";
+static HOME_TRANSITION_PENDING: AtomicBool = AtomicBool::new(false);
 
 fn should_show_main<I>(arguments: I) -> bool
 where
@@ -23,9 +25,32 @@ where
         .any(|argument| argument.as_ref() == "--show-main")
 }
 
+fn should_preview_transition<I>(arguments: I) -> bool
+where
+    I: IntoIterator,
+    I::Item: AsRef<str>,
+{
+    arguments
+        .into_iter()
+        .any(|argument| argument.as_ref() == "--preview-home-transition")
+}
+
 #[tauri::command]
 fn show_main_window(app: tauri::AppHandle) -> Result<(), String> {
     show_main(&app).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn begin_home_transition(app: tauri::AppHandle) -> Result<(), String> {
+    HOME_TRANSITION_PENDING.store(true, Ordering::Release);
+    show_main(&app).map_err(|error| error.to_string())?;
+    app.emit_to(MAIN_WINDOW, "home-entry-started", ())
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn consume_home_transition() -> bool {
+    HOME_TRANSITION_PENDING.swap(false, Ordering::AcqRel)
 }
 
 #[tauri::command]
@@ -79,7 +104,9 @@ fn create_tray(app: &tauri::App) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let show_main_on_ready = should_show_main(std::env::args());
+    let arguments = std::env::args().collect::<Vec<_>>();
+    let preview_transition_on_ready = should_preview_transition(&arguments);
+    let show_main_on_ready = should_show_main(&arguments) || preview_transition_on_ready;
     let app = tauri::Builder::default()
         .plugin(
             tauri_plugin_window_state::Builder::default()
@@ -88,6 +115,8 @@ pub fn run() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
+            begin_home_transition,
+            consume_home_transition,
             show_main_window,
             hide_main_window,
             show_house_window
@@ -109,14 +138,28 @@ pub fn run() {
 
     app.run(move |app_handle, event| {
         if show_main_on_ready && matches!(event, RunEvent::Ready) {
+            if preview_transition_on_ready {
+                HOME_TRANSITION_PENDING.store(true, Ordering::Release);
+            }
             let _ = show_main(app_handle);
+            if preview_transition_on_ready {
+                let app = app_handle.clone();
+                std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(2000));
+                    HOME_TRANSITION_PENDING.store(true, Ordering::Release);
+                    let _ = app.emit_to(MAIN_WINDOW, "home-entry-started", ());
+                });
+            }
         }
     });
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{should_show_main, MENU_HIDE_HOUSE, MENU_OPEN_HOME, MENU_QUIT, MENU_SHOW_HOUSE};
+    use super::{
+        should_preview_transition, should_show_main, MENU_HIDE_HOUSE, MENU_OPEN_HOME, MENU_QUIT,
+        MENU_SHOW_HOUSE,
+    };
 
     #[test]
     fn tray_menu_ids_are_stable_and_unique() {
@@ -131,5 +174,14 @@ mod tests {
     fn qa_flag_can_open_the_main_window() {
         assert!(should_show_main(["oneshow-home", "--show-main"]));
         assert!(!should_show_main(["oneshow-home"]));
+    }
+
+    #[test]
+    fn qa_flag_can_preview_the_entry_transition() {
+        assert!(should_preview_transition([
+            "oneshow-home",
+            "--preview-home-transition"
+        ]));
+        assert!(!should_preview_transition(["oneshow-home"]));
     }
 }
