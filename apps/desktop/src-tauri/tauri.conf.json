@@ -1,0 +1,68 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "OneShow Home",
+  "version": "0.1.0",
+  "identifier": "com.oneshow.home",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "pnpm build:web",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "security": {
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+    },
+    "windows": [
+      {
+        "label": "main",
+        "title": "OneShow Home",
+        "url": "index.html?window=main",
+        "width": 980,
+        "height": 720,
+        "minWidth": 760,
+        "minHeight": 580,
+        "center": true,
+        "visible": false,
+        "resizable": true,
+        "fullscreen": false
+      },
+      {
+        "label": "house",
+        "title": "OneShow Home House",
+        "url": "index.html?window=house",
+        "width": 230,
+        "height": 210,
+        "x": 48,
+        "y": 90,
+        "visible": true,
+        "focus": false,
+        "acceptFirstMouse": true,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false,
+        "resizable": false,
+        "maximizable": false,
+        "minimizable": false,
+        "closable": false,
+        "alwaysOnBottom": true,
+        "visibleOnAllWorkspaces": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "14.0",
+      "hardenedRuntime": true
+    }
+  }
+}

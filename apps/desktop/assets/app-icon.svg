@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff7e8" />
+      <stop offset="1" stop-color="#e6c9a5" />
+    </linearGradient>
+    <linearGradient id="roof" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#d77b62" />
+      <stop offset="1" stop-color="#96493f" />
+    </linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%">
+      <feDropShadow dx="0" dy="36" flood-color="#52382c" flood-opacity=".22" stdDeviation="28" />
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#background)" />
+  <circle cx="780" cy="242" r="72" fill="#f7cb6f" opacity=".9" />
+  <ellipse cx="512" cy="806" rx="330" ry="72" fill="#6c8b66" opacity=".25" />
+  <g filter="url(#shadow)">
+    <path d="M286 441h452v344H286z" fill="#f8dfb5" />
+    <path d="m214 468 297-253 306 253-65 55-241-199-238 199z" fill="url(#roof)" />
+    <path d="M440 579h144v206H440z" rx="20" fill="#9b6048" />
+    <circle cx="551" cy="686" r="12" fill="#f5d889" />
+    <rect x="319" y="553" width="98" height="116" rx="18" fill="#9cc9c7" />
+    <path d="M368 553v116M319 611h98" stroke="#fff4dd" stroke-width="12" />
+    <rect x="614" y="553" width="98" height="116" rx="18" fill="#9cc9c7" />
+    <path d="M663 553v116M614 611h98" stroke="#fff4dd" stroke-width="12" />
+    <path d="M248 786h526" stroke="#6d9567" stroke-linecap="round" stroke-width="35" />
+  </g>
+</svg>

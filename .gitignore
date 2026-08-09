@@ -23,4 +23,11 @@ node_modules/
 dist/
 build/
 coverage/
+.vite/
+target/
+apps/desktop/src-tauri/gen/
+
+# Tauri signing and local release configuration
+apps/desktop/src-tauri/tauri.*.conf.json
+!apps/desktop/src-tauri/tauri.macos.conf.json
 

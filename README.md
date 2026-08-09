@@ -44,6 +44,30 @@ Tauri v2 + React + TypeScript + Rust + SQLite
 - Buddy Life Engine 与 React、Tauri 和具体模型解耦；
 - MVP 暂定采用 Developer ID 签名、公证并直接分发。
 
+## 本地开发
+
+环境要求：
+
+- macOS 14 及以上；
+- Node.js 22 及以上；
+- pnpm；
+- Rust stable，包含 `rustfmt` 和 `clippy`；
+- Apple Command Line Tools。
+
+```bash
+pnpm install
+pnpm verify
+pnpm dev
+```
+
+生成本地 macOS `.app`：
+
+```bash
+pnpm build:app
+```
+
+当前验证结果与人工验收项目见 [Phase 0 技术验证记录](docs/engineering/phase-0-validation.md)。
+
 ## 开发约定
 
 - `main` 始终保持可构建、可发布；
