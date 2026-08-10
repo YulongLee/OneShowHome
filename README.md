@@ -29,6 +29,7 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 
 - [技术架构](docs/engineering/architecture.md)：模块边界、目录、状态引擎和数据模型；
 - [联网后端服务](docs/engineering/backend-service.md)：API、身份、PostgreSQL、Admin 模型网关和 OSS 边界；
+- [macOS 本地模型运行时](docs/engineering/local-model-runtime.md)：Ollama、LM Studio、隐私和接口约束；
 - [安全、隐私与陪伴边界](docs/engineering/security-and-privacy.md)；
 - [研发流程与质量规范](docs/engineering/development-workflow.md)；
 - [贡献指南](CONTRIBUTING.md)；
@@ -43,6 +44,7 @@ Tauri v2 + React + TypeScript + Rust + Node.js + PostgreSQL
 - macOS 14+、Apple Silicon 优先；
 - 本地优先，小屋与基础生活体验不依赖在线服务；
 - AI Provider 由 Admin 配置，供应商密钥不进入客户端；
+- 高级用户可让 Buddy 直接使用 Mac 上的 Ollama 或 LM Studio，本地消息不会静默上传；
 - 安装令牌保存在 macOS Keychain，服务端只保存摘要；
 - Buddy Life Engine 与 React、Tauri 和具体模型解耦；
 - MVP 暂定采用 Developer ID 签名、公证并直接分发。

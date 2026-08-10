@@ -19,7 +19,12 @@ import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import doorwayScene from "../../assets/house/cottage-doorway.png";
 import livingRoomScene from "../../assets/house/living-room.png";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
-import { sendBuddyMessage } from "../../services/backend";
+import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
+import {
+  loadModelSettings,
+  sendConfiguredBuddyMessage,
+  type ModelSettings,
+} from "../../services/model-runtime";
 
 const rooms = [
   { label: "客厅", icon: House, available: true },
@@ -41,6 +46,9 @@ export function HomeSurface() {
   const [chat, setChat] = useState("");
   const [buddyLine, setBuddyLine] = useState("欢迎回家，今晚想和我聊聊吗？");
   const [isSending, setIsSending] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [modelSettings, setModelSettings] =
+    useState<ModelSettings>(loadModelSettings);
   const transitionTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -85,9 +93,13 @@ export function HomeSurface() {
     setIsSending(true);
     setBuddyLine("让我想一想…");
     try {
-      setBuddyLine(await sendBuddyMessage(content));
+      setBuddyLine(await sendConfiguredBuddyMessage(content));
     } catch {
-      setBuddyLine("刚才的声音像是被风吹散了。网络恢复后，再和我说一次好吗？");
+      setBuddyLine(
+        modelSettings.mode === "local"
+          ? "本地模型暂时没有回应。确认它仍在运行后，再和我说一次好吗？"
+          : "刚才的声音像是被风吹散了。网络恢复后，再和我说一次好吗？",
+      );
     } finally {
       setIsSending(false);
     }
@@ -164,7 +176,11 @@ export function HomeSurface() {
         {quickActions.map(({ icon: Icon, label }) => (
           <button
             key={label}
-            onClick={() => setNotice(`${label}功能将在后续阶段开放。`)}
+            onClick={() =>
+              label === "设置"
+                ? setSettingsOpen(true)
+                : setNotice(`${label}功能将在后续阶段开放。`)
+            }
             type="button"
           >
             <Icon />
@@ -180,6 +196,9 @@ export function HomeSurface() {
 
       <form className="chat-dock" onSubmit={submitChat}>
         <ChatCircleDots aria-hidden="true" />
+        <span className={`model-source ${modelSettings.mode}`}>
+          {modelSettings.mode === "local" ? "本地" : "官方"}
+        </span>
         <label className="sr-only" htmlFor="buddy-chat">
           和 Buddy 聊聊
         </label>
@@ -214,6 +233,20 @@ export function HomeSurface() {
             回家了
           </span>
         </div>
+      ) : null}
+
+      {settingsOpen ? (
+        <ModelSettingsDialog
+          onClose={() => setSettingsOpen(false)}
+          onSaved={(settings) => {
+            setModelSettings(settings);
+            setNotice(
+              settings.mode === "local"
+                ? `已切换到本地模型 ${settings.local.modelId}。`
+                : "已切换到 OneShow 官方模型。",
+            );
+          }}
+        />
       ) : null}
     </main>
   );

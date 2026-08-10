@@ -1,4 +1,6 @@
+mod local_model;
 mod windows;
+use local_model::{chat_local_model, test_local_model};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
@@ -155,7 +157,9 @@ pub fn run() {
             hide_main_window,
             show_house_window,
             load_installation_credential,
-            save_installation_credential
+            save_installation_credential,
+            test_local_model,
+            chat_local_model
         ])
         .setup(|app| {
             create_tray(app)?;

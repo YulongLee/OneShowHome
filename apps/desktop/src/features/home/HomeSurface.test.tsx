@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
 import { HomeSurface } from "./HomeSurface";
-import { sendBuddyMessage } from "../../services/backend";
+import { sendConfiguredBuddyMessage } from "../../services/model-runtime";
 
 vi.mock("../../platform/desktop", () => ({
   hideHome: vi.fn(),
@@ -11,8 +11,19 @@ vi.mock("../../platform/desktop", () => ({
   showHouse: vi.fn(),
 }));
 
-vi.mock("../../services/backend", () => ({
-  sendBuddyMessage: vi.fn(),
+vi.mock("../../services/model-runtime", () => ({
+  loadModelSettings: vi.fn(() => ({
+    mode: "official",
+    local: {
+      provider: "ollama",
+      baseUrl: "http://127.0.0.1:11434/v1",
+      modelId: "",
+    },
+  })),
+  sendConfiguredBuddyMessage: vi.fn(),
+  saveModelSettings: vi.fn(),
+  testLocalModel: vi.fn(),
+  clearLocalConversation: vi.fn(),
 }));
 
 describe("HomeSurface", () => {
@@ -20,7 +31,7 @@ describe("HomeSurface", () => {
     vi.mocked(showHouse).mockResolvedValue(undefined);
     vi.mocked(hideHome).mockResolvedValue(undefined);
     vi.mocked(onHomeEntry).mockResolvedValue(vi.fn());
-    vi.mocked(sendBuddyMessage).mockResolvedValue(
+    vi.mocked(sendConfiguredBuddyMessage).mockResolvedValue(
       "辛苦了，先在沙发上休息一会儿吧。",
     );
   });
@@ -49,6 +60,19 @@ describe("HomeSurface", () => {
     expect(hideHome).toHaveBeenCalledOnce();
   });
 
+  it("opens the Buddy model settings from the quick rail", async () => {
+    const user = userEvent.setup();
+    render(<HomeSurface />);
+
+    await user.click(screen.getByRole("button", { name: "设置" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "Buddy 的大脑" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("OneShow 官方模型")).toBeInTheDocument();
+    expect(screen.getByText("这台 Mac 的本地模型")).toBeInTheDocument();
+  });
+
   it("shows the reply returned by the Buddy backend", async () => {
     const user = userEvent.setup();
     render(<HomeSurface />);
@@ -59,7 +83,7 @@ describe("HomeSurface", () => {
     );
     await user.click(screen.getByRole("button", { name: "发送消息" }));
 
-    expect(sendBuddyMessage).toHaveBeenCalledWith("今天有点累");
+    expect(sendConfiguredBuddyMessage).toHaveBeenCalledWith("今天有点累");
     expect(await screen.findByText(/先在沙发上休息/)).toBeInTheDocument();
   });
 });
