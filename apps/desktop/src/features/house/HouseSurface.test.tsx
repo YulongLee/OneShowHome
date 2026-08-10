@@ -10,6 +10,7 @@ vi.mock("../../platform/desktop", () => ({
 
 describe("HouseSurface", () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.mocked(moveHouse).mockResolvedValue(undefined);
     vi.mocked(showHome).mockResolvedValue(undefined);
   });
@@ -25,16 +26,38 @@ describe("HouseSurface", () => {
     vi.useRealTimers();
   });
 
-  it("starts native dragging from the move handle", () => {
+  it("starts native dragging by moving the house itself", () => {
+    render(<HouseSurface />);
+
+    const house = screen.getByRole("button", { name: "进入 OneShow Home" });
+
+    fireEvent.pointerDown(house, { button: 0, clientX: 20, clientY: 20 });
+    fireEvent.pointerMove(house, { clientX: 30, clientY: 28 });
+
+    expect(moveHouse).toHaveBeenCalledOnce();
+  });
+
+  it("starts native dragging after holding the house", async () => {
+    vi.useFakeTimers();
     render(<HouseSurface />);
 
     fireEvent.pointerDown(
-      screen.getByRole("button", { name: "拖动桌面小屋" }),
-      {
-        button: 0,
-      },
+      screen.getByRole("button", { name: "进入 OneShow Home" }),
+      { button: 0, clientX: 20, clientY: 20 },
     );
+    await vi.advanceTimersByTimeAsync(180);
 
     expect(moveHouse).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("greets the user when the house is hovered", () => {
+    render(<HouseSurface />);
+
+    fireEvent.pointerEnter(
+      screen.getByRole("button", { name: "进入 OneShow Home" }),
+    );
+
+    expect(screen.getByLabelText("Milo 正在向你招手")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import buddyIdle from "../../assets/house/buddy-idle.png";
+import buddyWave from "../../assets/house/buddy-wave.png";
 import cottageExterior from "../../assets/house/cottage-exterior.png";
 import { getTimeOfDay } from "../../lib/time";
 import { moveHouse, showHome } from "../../platform/desktop";
@@ -7,6 +9,16 @@ export function HouseSurface() {
   const timeOfDay = useMemo(() => getTimeOfDay(new Date()), []);
   const [error, setError] = useState<string | null>(null);
   const [isEntering, setIsEntering] = useState(false);
+  const [buddyPose, setBuddyPose] = useState<"idle" | "wave">("idle");
+  const greetingTimer = useRef<number | null>(null);
+  const dragDelay = useRef<number | null>(null);
+  const dragState = useRef({
+    armed: false,
+    dragging: false,
+    pointerId: -1,
+    startX: 0,
+    startY: 0,
+  });
 
   const run = async (operation: () => Promise<void>) => {
     setError(null);
@@ -25,39 +37,126 @@ export function HouseSurface() {
     }, 520);
   };
 
+  const greet = useCallback(() => {
+    if (greetingTimer.current) window.clearTimeout(greetingTimer.current);
+    setBuddyPose("wave");
+    greetingTimer.current = window.setTimeout(() => {
+      setBuddyPose("idle");
+    }, 1900);
+  }, []);
+
+  useEffect(() => {
+    const greetingInterval = window.setInterval(greet, 9000);
+    return () => {
+      window.clearInterval(greetingInterval);
+      if (greetingTimer.current) window.clearTimeout(greetingTimer.current);
+      if (dragDelay.current) window.clearTimeout(dragDelay.current);
+    };
+  }, [greet]);
+
+  const clearDragDelay = () => {
+    if (!dragDelay.current) return;
+    window.clearTimeout(dragDelay.current);
+    dragDelay.current = null;
+  };
+
+  const startNativeDrag = () => {
+    if (!dragState.current.armed || dragState.current.dragging) return;
+    clearDragDelay();
+    dragState.current.dragging = true;
+    void run(moveHouse).finally(() => {
+      dragState.current.armed = false;
+    });
+  };
+
   return (
     <main
       className={`house-surface house-surface--${timeOfDay}${isEntering ? " is-entering" : ""}`}
     >
       <button
-        aria-label="拖动桌面小屋"
-        className="house-move-handle"
-        onPointerDown={(event) => {
-          if (event.button === 0) {
-            void run(moveHouse);
-          }
-        }}
-        type="button"
-      >
-        <span />
-        <span />
-        <span />
-      </button>
-
-      <button
         aria-label="进入 OneShow Home"
         className="house-entry"
         disabled={isEntering}
-        onClick={enterHome}
+        onClick={(event) => {
+          if (event.detail === 0) enterHome();
+        }}
+        onPointerCancel={() => {
+          clearDragDelay();
+          dragState.current.armed = false;
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0 || isEntering) return;
+          dragState.current = {
+            armed: true,
+            dragging: false,
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startY: event.clientY,
+          };
+          if ("setPointerCapture" in event.currentTarget) {
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }
+          dragDelay.current = window.setTimeout(startNativeDrag, 180);
+        }}
+        onPointerEnter={greet}
+        onPointerMove={(event) => {
+          if (!dragState.current.armed || dragState.current.dragging) return;
+          const distance = Math.hypot(
+            event.clientX - dragState.current.startX,
+            event.clientY - dragState.current.startY,
+          );
+          if (distance >= 5) startNativeDrag();
+        }}
+        onPointerUp={(event) => {
+          if (!dragState.current.armed) return;
+          clearDragDelay();
+          if (
+            "hasPointerCapture" in event.currentTarget &&
+            event.currentTarget.hasPointerCapture(event.pointerId)
+          ) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+          const wasDragging = dragState.current.dragging;
+          dragState.current.armed = false;
+          if (!wasDragging) enterHome();
+        }}
+        title="轻点回家，按住小屋即可拖动"
         type="button"
       >
-        <img
-          alt="一座亮着暖灯、Buddy 坐在门前的微缩小屋"
-          className="cottage-exterior"
-          draggable="false"
-          src={cottageExterior}
-        />
-        <span className="house-hint">点击回家</span>
+        <span className="house-composition">
+          <img
+            alt="一座亮着暖灯的微缩小屋"
+            className="cottage-exterior"
+            draggable="false"
+            src={cottageExterior}
+          />
+          <span
+            aria-label={`Milo 正在${buddyPose === "wave" ? "向你招手" : "休息"}`}
+            className="buddy-stage"
+          >
+            <img
+              alt=""
+              aria-hidden="true"
+              className={`buddy-sprite buddy-sprite--idle${buddyPose === "idle" ? " is-active" : ""}`}
+              draggable="false"
+              src={buddyIdle}
+            />
+            <img
+              alt=""
+              aria-hidden="true"
+              className={`buddy-sprite buddy-sprite--wave${buddyPose === "wave" ? " is-active" : ""}`}
+              draggable="false"
+              src={buddyWave}
+            />
+          </span>
+          <span
+            aria-hidden="true"
+            className={`buddy-callout${buddyPose === "wave" ? " is-visible" : ""}`}
+          >
+            你好呀
+          </span>
+        </span>
+        <span className="house-hint">轻点回家 · 按住拖动</span>
       </button>
 
       {error ? (
