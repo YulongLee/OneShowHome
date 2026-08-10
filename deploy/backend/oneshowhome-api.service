@@ -1,0 +1,23 @@
+[Unit]
+Description=OneShowHome Companion API
+After=network-online.target postgresql.service oneshowtools.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=oneshowhome
+Group=oneshowhome
+WorkingDirectory=/var/www/oneshowhome-api/app
+EnvironmentFile=/etc/oneshowhome/oneshowhome-api.env
+Environment=PATH=/opt/node-v22/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
+ExecStart=/opt/node-v22/bin/node dist/src/index.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/www/oneshowhome-api
+
+[Install]
+WantedBy=multi-user.target
