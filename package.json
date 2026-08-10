@@ -8,7 +8,9 @@
   },
   "scripts": {
     "dev": "pnpm --filter @oneshow/desktop tauri dev",
+    "dev:web": "npm --prefix apps/web run dev",
     "build": "pnpm --filter @oneshow/desktop tauri build",
+    "build:web": "npm --prefix apps/web run build",
     "build:app": "pnpm --filter @oneshow/desktop tauri build --bundles app",
     "format": "pnpm --filter @oneshow/desktop format",
     "format:check": "pnpm --filter @oneshow/desktop format:check",
