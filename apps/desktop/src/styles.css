@@ -1,5 +1,5 @@
 :root {
-  color: #f8ead4;
+  color: #3f3529;
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC",
     "Helvetica Neue", sans-serif;
@@ -28,7 +28,7 @@ input {
 
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid rgb(255 219 156 / 78%);
+  outline: 2px solid rgb(95 132 67 / 78%);
   outline-offset: 3px;
 }
 
@@ -77,8 +77,8 @@ html[data-surface="house"] #root {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 15px 12px rgb(28 20 16 / 35%));
-  transform: translateY(3px) scale(0.96);
+  filter: drop-shadow(0 14px 11px rgb(60 44 28 / 30%));
+  transform: translateY(3px) scale(0.95);
   transition:
     filter 260ms ease,
     transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -86,7 +86,7 @@ html[data-surface="house"] #root {
 
 .house-entry:hover .cottage-exterior,
 .house-entry:focus-visible .cottage-exterior {
-  filter: drop-shadow(0 18px 16px rgb(28 20 16 / 45%)) brightness(1.04);
+  filter: drop-shadow(0 18px 17px rgb(60 44 28 / 38%)) brightness(1.035);
   transform: translateY(-2px) scale(1);
 }
 
@@ -99,10 +99,10 @@ html[data-surface="house"] #root {
   right: 18px;
   bottom: 14px;
   padding: 7px 12px;
-  border: 1px solid rgb(255 255 255 / 52%);
+  border: 1px solid rgb(255 255 255 / 70%);
   border-radius: 999px;
-  color: #5e4838;
-  background: rgb(255 248 231 / 88%);
+  color: #466238;
+  background: rgb(255 252 240 / 92%);
   box-shadow: 0 8px 24px rgb(45 31 22 / 24%);
   font-size: 11px;
   font-weight: 700;
@@ -133,7 +133,7 @@ html[data-surface="house"] #root {
   padding: 7px 10px;
   border: 1px solid rgb(255 255 255 / 42%);
   border-radius: 999px;
-  background: rgb(54 42 34 / 46%);
+  background: rgb(65 83 50 / 60%);
   opacity: 0;
   cursor: grab;
   transform: translateX(-50%) translateY(-3px);
@@ -194,7 +194,7 @@ html[data-surface="main"] body,
 html[data-surface="main"] #root {
   height: 100%;
   overflow: hidden;
-  background: #2d1b11;
+  background: #e8d9bc;
 }
 
 .home-shell {
@@ -204,7 +204,7 @@ html[data-surface="main"] #root {
   min-width: 920px;
   min-height: 600px;
   overflow: hidden;
-  background: #2d1b11;
+  background: #e8d9bc;
 }
 
 .home-scene {
@@ -217,7 +217,13 @@ html[data-surface="main"] #root {
 .scene-shade {
   position: absolute;
   inset: 0;
-  background: rgb(28 16 9 / 10%);
+  background: linear-gradient(
+    90deg,
+    rgb(54 47 34 / 12%) 0%,
+    transparent 32%,
+    transparent 68%,
+    rgb(54 47 34 / 10%) 100%
+  );
   pointer-events: none;
 }
 
@@ -237,20 +243,30 @@ html[data-surface="main"] #root {
   display: flex;
   gap: 10px;
   align-items: center;
-  color: #fff8eb;
+  color: #3e4f31;
   font-size: 13px;
   font-weight: 750;
-  text-shadow: 0 2px 10px rgb(25 13 7 / 55%);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 65%);
 }
 .brand-mark {
   display: grid;
   width: 32px;
   height: 32px;
   place-items: center;
-  border: 1px solid rgb(255 239 211 / 34%);
+  border: 1px solid rgb(255 255 255 / 72%);
   border-radius: 11px;
-  background: rgb(48 31 19 / 58%);
+  color: #fffdf4;
+  background: rgb(83 115 59 / 88%);
+  box-shadow: 0 8px 22px rgb(68 83 50 / 20%);
   backdrop-filter: blur(12px);
+}
+
+.home-kicker {
+  padding-left: 10px;
+  border-left: 1px solid rgb(68 88 49 / 28%);
+  color: rgb(64 72 53 / 72%);
+  font-size: 10px;
+  font-weight: 600;
 }
 .brand-mark svg {
   width: 18px;
@@ -260,10 +276,11 @@ html[data-surface="main"] #root {
 .desktop-return {
   min-height: 34px;
   padding: 0 13px;
-  border: 1px solid rgb(255 239 211 / 30%);
+  border: 1px solid rgb(255 255 255 / 72%);
   border-radius: 11px;
-  color: #fff1d8;
-  background: rgb(48 31 19 / 52%);
+  color: #49613b;
+  background: rgb(255 251 237 / 82%);
+  box-shadow: 0 8px 24px rgb(58 45 30 / 15%);
   cursor: pointer;
   pointer-events: auto;
   backdrop-filter: blur(14px);
@@ -278,10 +295,10 @@ html[data-surface="main"] #root {
   flex-direction: column;
   gap: 7px;
   padding: 8px;
-  border: 1px solid rgb(255 235 203 / 18%);
+  border: 1px solid rgb(255 255 255 / 64%);
   border-radius: 18px;
-  background: rgb(52 32 19 / 58%);
-  box-shadow: 0 16px 42px rgb(19 10 5 / 28%);
+  background: rgb(255 249 232 / 72%);
+  box-shadow: 0 16px 42px rgb(73 57 36 / 18%);
   transform: translateY(-50%);
   backdrop-filter: blur(18px);
 }
@@ -305,7 +322,7 @@ html[data-surface="main"] #root {
   padding: 5px;
   border: 0;
   border-radius: 13px;
-  color: rgb(255 236 207 / 72%);
+  color: rgb(70 81 55 / 68%);
   background: transparent;
   cursor: pointer;
   transition:
@@ -316,14 +333,14 @@ html[data-surface="main"] #root {
 
 .room-button:hover,
 .quick-rail button:hover {
-  color: #fff4df;
-  background: rgb(255 222 166 / 13%);
+  color: #3e5b31;
+  background: rgb(123 151 91 / 13%);
   transform: translateY(-1px);
 }
 .room-button.is-active {
-  color: #51331f;
-  background: #f1c982;
-  box-shadow: 0 8px 20px rgb(21 11 5 / 28%);
+  color: #fffdf5;
+  background: #66874d;
+  box-shadow: 0 8px 20px rgb(60 87 43 / 24%);
 }
 .room-button svg,
 .quick-rail svg {
@@ -343,10 +360,11 @@ html[data-surface="main"] #root {
   right: 22px;
   width: 142px;
   padding: 12px 14px;
-  border: 1px solid rgb(255 235 203 / 20%);
+  border: 1px solid rgb(255 255 255 / 68%);
   border-radius: 16px;
-  background: rgb(52 32 19 / 58%);
-  box-shadow: 0 12px 36px rgb(19 10 5 / 25%);
+  color: #46533a;
+  background: rgb(255 249 232 / 78%);
+  box-shadow: 0 12px 36px rgb(67 52 33 / 17%);
   backdrop-filter: blur(16px);
 }
 
@@ -359,7 +377,7 @@ html[data-surface="main"] #root {
   gap: 7px;
   justify-content: flex-start;
   margin-top: 8px;
-  color: #edc77f;
+  color: #66874d;
   font-size: 11px;
 }
 .weather-card span {
@@ -383,11 +401,11 @@ html[data-surface="main"] #root {
   align-items: flex-start;
   width: min(250px, 24vw);
   padding: 12px 14px;
-  border: 1px solid rgb(255 255 255 / 55%);
+  border: 1px solid rgb(255 255 255 / 78%);
   border-radius: 18px 18px 6px 18px;
-  color: #553a28;
-  background: rgb(255 245 222 / 91%);
-  box-shadow: 0 14px 38px rgb(32 17 8 / 24%);
+  color: #493c2f;
+  background: rgb(255 252 239 / 91%);
+  box-shadow: 0 14px 38px rgb(61 47 31 / 18%);
   backdrop-filter: blur(12px);
 }
 
@@ -395,7 +413,7 @@ html[data-surface="main"] #root {
   width: 20px;
   height: 20px;
   flex: 0 0 auto;
-  color: #c87952;
+  color: #c9795a;
 }
 .buddy-bubble p {
   margin: 0;
@@ -416,28 +434,28 @@ html[data-surface="main"] #root {
   align-items: center;
   min-height: 54px;
   padding: 7px 8px 7px 16px;
-  border: 1px solid rgb(255 239 211 / 28%);
+  border: 1px solid rgb(255 255 255 / 76%);
   border-radius: 18px;
-  background: rgb(55 34 20 / 66%);
-  box-shadow: 0 18px 50px rgb(18 9 4 / 35%);
+  background: rgb(255 250 235 / 84%);
+  box-shadow: 0 18px 50px rgb(62 47 31 / 20%);
   backdrop-filter: blur(20px);
 }
 
 .chat-dock > svg {
   width: 21px;
   height: 21px;
-  color: #edc77f;
+  color: #66874d;
 }
 .chat-dock input {
   width: 100%;
   border: 0;
   outline: 0;
-  color: #fff6e8;
+  color: #44382d;
   background: transparent;
   font-size: 13px;
 }
 .chat-dock input::placeholder {
-  color: rgb(255 239 216 / 60%);
+  color: rgb(70 61 49 / 52%);
 }
 .chat-dock button {
   display: grid;
@@ -446,8 +464,8 @@ html[data-surface="main"] #root {
   place-items: center;
   border: 0;
   border-radius: 13px;
-  color: #54351e;
-  background: #efc77e;
+  color: #fffdf5;
+  background: #66874d;
   cursor: pointer;
 }
 .chat-dock button svg {
@@ -463,11 +481,61 @@ html[data-surface="main"] #root {
   margin: 0;
   padding: 8px 12px;
   border-radius: 999px;
-  color: #4d3525;
-  background: rgb(255 243 218 / 92%);
+  color: #456039;
+  background: rgb(255 251 237 / 94%);
   box-shadow: 0 8px 25px rgb(24 12 6 / 26%);
   font-size: 11px;
   transform: translateX(-50%);
+}
+
+.buddy-status {
+  position: absolute;
+  z-index: 4;
+  top: 66px;
+  left: 22px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 16px;
+  color: #46513a;
+  background: rgb(255 249 232 / 80%);
+  box-shadow: 0 12px 32px rgb(63 50 34 / 16%);
+  backdrop-filter: blur(16px);
+}
+
+.buddy-avatar {
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgb(255 255 255 / 76%);
+  border-radius: 50%;
+  background: #dfe8d1;
+  object-fit: cover;
+  object-position: 50% 24%;
+}
+
+.buddy-status div {
+  display: grid;
+  gap: 3px;
+}
+
+.buddy-status strong {
+  font-size: 12px;
+}
+
+.buddy-status div span {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  color: rgb(65 73 54 / 68%);
+  font-size: 9px;
+}
+
+.buddy-status svg {
+  width: 10px;
+  height: 10px;
+  color: #cf785a;
 }
 
 .entry-transition {
@@ -475,7 +543,7 @@ html[data-surface="main"] #root {
   z-index: 20;
   inset: 0;
   overflow: hidden;
-  background: #3b2112;
+  background: #e7d3a9;
   animation: transition-dismiss 1850ms linear both;
 }
 
@@ -503,8 +571,8 @@ html[data-surface="main"] #root {
   padding: 8px 13px;
   border: 1px solid rgb(255 255 255 / 35%);
   border-radius: 999px;
-  color: #fff2dc;
-  background: rgb(53 31 18 / 44%);
+  color: #3f5d32;
+  background: rgb(255 251 237 / 82%);
   font-size: 12px;
   font-weight: 700;
   transform: translateX(-50%);
@@ -513,7 +581,7 @@ html[data-surface="main"] #root {
 }
 
 .entry-transition > span svg {
-  color: #ffd78e;
+  color: #d5924f;
 }
 
 @keyframes doorway-push {

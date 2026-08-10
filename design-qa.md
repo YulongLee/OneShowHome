@@ -1,52 +1,47 @@
-# OneShow Home Entry Experience — Design QA
+# OneShow Home Anime Desktop — Design QA
 
 ## Evidence
 
-- Source visual truth:
-  - `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-dca27ff7-83b7-4cb6-81cc-9b74a3b76ad3.png`
-  - `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-3c204282-7c96-487c-bd45-5336ffff7fd9.png`
-- Implementation screenshots:
-  - `.qa/house-implementation-v1.png`
-  - `.qa/transition-implementation-final.png`
-  - `.qa/home-implementation-v1.png`
-- Combined comparison input: `.qa/design-comparison-final.png`
-- Viewport: macOS native windows; Home configured at 1120 × 700 CSS px, house at 310 × 290 CSS px.
-- Source pixels: flow board 1310 × 1201; exterior board 1402 × 1122.
-- Implementation pixels: Home 1188 × 768 including native frame/shadow; transition 1188 × 768 including native frame/shadow; house 310 × 290.
-- Density normalization: source crops and implementation captures were fitted into equal 900 × 526 evidence panels without stretching; aspect ratio was preserved.
-- State: evening desktop cottage, mid-entry doorway push, and final living-room interaction state.
+- Source visual truth: `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-853a89d1-9c5d-4087-a7a4-e43f624a7757.png`
+- Implementation screenshots: `.qa/anime-home.png`, `.qa/anime-house.png`
+- Combined comparison input: `.qa/anime-comparison.png`
+- Viewport: macOS native Home window configured at 1120 × 700 CSS px; transparent house window at 310 × 290 CSS px.
+- Source pixels: 1214 × 1265.
+- Implementation pixels: Home capture 1232 × 812 including native frame/shadow; house capture 310 × 290.
+- Density normalization: source and Home capture were fitted into separate 1200 px comparison columns with aspect ratio preserved; the house capture remained at its native pixel size.
+- State: final living-room interaction state and idle transparent desktop cottage.
 
 ## Findings
 
-- No actionable P0/P1/P2 visual mismatch remains.
-- Fonts and typography: native Apple system typography, compact weights, and Chinese fallback hierarchy align with the macOS direction. Small labels remain readable at the target window size.
-- Spacing and layout rhythm: persistent left room rail, right quick rail, top weather card, Buddy speech, and bottom chat dock match the reference hierarchy without covering Buddy or primary room objects.
-- Colors and visual tokens: the amber/brown translucent controls, cream speech surface, and warm highlight color consistently follow the source palette and maintain usable contrast.
-- Image quality and asset fidelity: exterior, doorway, and interior are real raster assets in one coherent premium 3D miniature style. The exterior uses a verified alpha channel and has no placeholder SVG/CSS artwork.
-- Copy and content: room names, quick actions, weather, Buddy welcome, and chat prompt reproduce the intended product roles with concise MVP copy.
-- Expected deviation: the source exterior is shown against a designed landscape wallpaper while the implementation intentionally uses transparency so the user's real desktop remains visible.
+- No actionable P0/P1/P2 mismatch remains.
+- Fonts and typography: Apple system typography and PingFang Chinese fallbacks preserve the reference's quiet, editorial hierarchy. Labels remain readable at native desktop size.
+- Spacing and layout rhythm: the left room rail, right quick rail, status/weather cards, Buddy speech, and bottom chat dock leave the character and room focal points visible. Rounded cream surfaces reproduce the soft card rhythm of the website.
+- Colors and visual tokens: botanical green, warm cream, honey wood, and muted coral are consistently shared by the illustration assets and interactive controls. Contrast is usable without returning to the previous dark HUD style.
+- Image quality and asset fidelity: the cottage, doorway, living room, and Buddy portrait are real production raster assets generated in one hand-painted anime storybook direction. Cottage and avatar alpha channels were verified; no visible illustration is approximated with CSS, SVG, emoji, or placeholders.
+- Copy and content: room names, Buddy status, time/weather, quick actions, welcome line, and chat prompt remain concise and aligned with the MVP.
+- Expected deviation: the website shows the cottage inside a landscape hero, while the native widget intentionally has a transparent background so it can live naturally on the user's real desktop.
 
 ## Focused Region Comparison
 
-- The combined comparison includes focused, equal-slot evidence for all three key regions: Home UI composition, doorway transition frame, and transparent cottage silhouette. No additional crop was needed because each focus area is legible at 900 px panel width.
+- The combined input includes the full website source, the complete native Home window, and the native-size cottage widget in one canvas. The controls, character rendering, palette, and cottage silhouette are legible at that scale, so another focused crop was not required.
 
 ## Comparison History
 
-1. Initial native capture confirmed the Home composition but did not show the doorway frame. Investigation found an event-delivery race between showing the native window and mounting the listener (P1 interaction reliability).
-2. Fixed by persisting a pending transition in Rust and consuming it on either the Tauri event or native focus change. Added a deterministic preview flag for native visual QA.
-3. Post-fix capture `.qa/transition-implementation-final.png` confirms the doorway push and warm-light crossing frame renders inside the native app before the final room reveal.
+1. Earlier implementation used a glossy 3D miniature cottage, dark brown glass controls, and a 3D interior. These were P1 style mismatches against the selected hand-painted anime reference.
+2. Replaced all four character/environment assets, converted required backgrounds to alpha, and remapped UI tokens to cream paper and botanical green.
+3. Post-fix evidence `.qa/anime-comparison.png` confirms the native app and website now share character design, cottage architecture, illustration texture, palette, and emotional tone. No P0/P1/P2 findings remain.
 
 ## Implementation Checklist
 
-- [x] Transparent desktop cottage uses the new production raster asset.
-- [x] Cottage click begins a short exterior camera approach.
-- [x] Native Home window reliably plays the doorway push transition.
-- [x] Final living room exposes working room controls, return-to-desktop, and local chat interaction.
-- [x] Reduced-motion preferences collapse animation duration.
-- [x] Frontend tests, lint, typecheck, Rust tests, and macOS app build pass.
+- [x] Transparent anime cottage is readable at 310 × 290.
+- [x] Doorway transition uses the same cottage and interior art direction.
+- [x] Living room, Buddy, cat, and portrait remain visually consistent.
+- [x] Native room controls, return-to-desktop, quick actions, and local chat remain functional.
+- [x] Frontend lint, typecheck, 17 tests, production build, Rust formatting, and 4 Rust tests pass.
+- [x] Unsigned macOS `.app` bundle builds successfully.
 
 ## Follow-up Polish
 
-- P3: future day/night and weather art variants should reuse the same camera, cottage silhouette, and Buddy proportions to avoid visible style drift.
+- P3: future day/night and weather variants should retain the same camera, line weight, Buddy proportions, and green/cream token system.
 
 final result: passed

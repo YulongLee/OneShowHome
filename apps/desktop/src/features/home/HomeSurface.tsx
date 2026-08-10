@@ -8,12 +8,14 @@ import {
   CookingPot,
   FlowerLotus,
   GearSix,
+  Heart,
   House,
   Images,
   Smiley,
   Sparkle,
 } from "@phosphor-icons/react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import doorwayScene from "../../assets/house/cottage-doorway.png";
 import livingRoomScene from "../../assets/house/living-room.png";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
@@ -96,6 +98,7 @@ export function HomeSurface() {
             <House weight="fill" />
           </span>
           <span>OneShow Home</span>
+          <span className="home-kicker">欢迎回家</span>
         </div>
         <button
           aria-label="返回桌面小屋"
@@ -106,6 +109,16 @@ export function HomeSurface() {
           返回桌面
         </button>
       </header>
+
+      <section aria-label="Buddy 状态" className="buddy-status">
+        <img alt="Milo" className="buddy-avatar" src={buddyAvatar} />
+        <div>
+          <strong>Milo</strong>
+          <span>
+            <Heart weight="fill" /> 心情很好 · 精力 80%
+          </span>
+        </div>
+      </section>
 
       <nav aria-label="房间导航" className="room-rail">
         {rooms.map(({ available, icon: Icon, label }) => (
