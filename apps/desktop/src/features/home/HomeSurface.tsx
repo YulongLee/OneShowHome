@@ -19,6 +19,7 @@ import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import doorwayScene from "../../assets/house/cottage-doorway.png";
 import livingRoomScene from "../../assets/house/living-room.png";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
+import { sendBuddyMessage } from "../../services/backend";
 
 const rooms = [
   { label: "客厅", icon: House, available: true },
@@ -39,6 +40,7 @@ export function HomeSurface() {
   const [notice, setNotice] = useState<string | null>(null);
   const [chat, setChat] = useState("");
   const [buddyLine, setBuddyLine] = useState("欢迎回家，今晚想和我聊聊吗？");
+  const [isSending, setIsSending] = useState(false);
   const transitionTimer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -75,12 +77,20 @@ export function HomeSurface() {
     }
   };
 
-  const submitChat = (event: FormEvent<HTMLFormElement>) => {
+  const submitChat = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = chat.trim();
-    if (!content) return;
+    if (!content || isSending) return;
     setChat("");
-    setBuddyLine(`我听到了：“${content}”。等聊天能力接入后，我会认真记住。`);
+    setIsSending(true);
+    setBuddyLine("让我想一想…");
+    try {
+      setBuddyLine(await sendBuddyMessage(content));
+    } catch {
+      setBuddyLine("刚才的声音像是被风吹散了。网络恢复后，再和我说一次好吗？");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -177,9 +187,10 @@ export function HomeSurface() {
           id="buddy-chat"
           onChange={(event) => setChat(event.target.value)}
           placeholder="和 Buddy 聊聊…"
+          disabled={isSending}
           value={chat}
         />
-        <button aria-label="发送消息" type="submit">
+        <button aria-label="发送消息" disabled={isSending} type="submit">
           <ArrowRight weight="bold" />
         </button>
       </form>

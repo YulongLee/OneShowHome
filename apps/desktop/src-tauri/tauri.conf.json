@@ -12,7 +12,7 @@
   "app": {
     "macOSPrivateApi": true,
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost https://oneshowhome.com http://127.0.0.1:8793; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
     },
     "windows": [
       {

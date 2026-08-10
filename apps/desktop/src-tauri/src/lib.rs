@@ -9,6 +9,15 @@ use tauri::{
 use tauri_plugin_window_state::StateFlags;
 use windows::{hide_house, hide_main, show_house, show_main, HOUSE_WINDOW, MAIN_WINDOW};
 
+const KEYCHAIN_SERVICE: &str = "com.oneshow.home";
+const KEYCHAIN_ACCOUNT: &str = "installation";
+
+#[derive(serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InstallationCredential {
+    token: String,
+}
+
 const MENU_OPEN_HOME: &str = "open-home";
 const MENU_SHOW_HOUSE: &str = "show-house";
 const MENU_HIDE_HOUSE: &str = "hide-house";
@@ -61,6 +70,31 @@ fn hide_main_window(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn show_house_window(app: tauri::AppHandle) -> Result<(), String> {
     show_house(&app).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn load_installation_credential() -> Result<Option<InstallationCredential>, String> {
+    let entry = keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
+        .map_err(|error| error.to_string())?;
+    match entry.get_password() {
+        Ok(value) => serde_json::from_str(&value)
+            .map(Some)
+            .map_err(|error| error.to_string()),
+        Err(keyring::Error::NoEntry) => Ok(None),
+        Err(error) => Err(error.to_string()),
+    }
+}
+
+#[tauri::command]
+fn save_installation_credential(credential: InstallationCredential) -> Result<(), String> {
+    if credential.token.len() < 40 || credential.token.len() > 200 {
+        return Err("invalid installation credential".to_string());
+    }
+    let value = serde_json::to_string(&credential).map_err(|error| error.to_string())?;
+    keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT)
+        .map_err(|error| error.to_string())?
+        .set_password(&value)
+        .map_err(|error| error.to_string())
 }
 
 fn create_tray(app: &tauri::App) -> tauri::Result<()> {
@@ -119,7 +153,9 @@ pub fn run() {
             consume_home_transition,
             show_main_window,
             hide_main_window,
-            show_house_window
+            show_house_window,
+            load_installation_credential,
+            save_installation_credential
         ])
         .setup(|app| {
             create_tray(app)?;

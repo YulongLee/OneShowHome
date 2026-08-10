@@ -6,13 +6,13 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 
 ## 当前阶段
 
-项目处于 macOS Local MVP 的产品与技术基线阶段。
+项目处于 macOS MVP 的首条联网陪伴链路开发阶段。
 
 当前优先级：
 
 1. 验证透明桌面小屋的 macOS 窗口体验；
-2. 完成不依赖 AI 的 Buddy 垂直切片；
-3. 增量加入聊天、记忆和日记；
+2. 保证断网时桌面小屋和基础 Buddy 体验可用；
+3. 拉通服务端聊天、用户数据、Admin 模型配置；
 4. 完成签名、公证和外部测试版本。
 
 暂不开发多人社交、Town、World、经济、商店、支付、云同步和多 Buddy。
@@ -28,6 +28,7 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 ## 工程文档
 
 - [技术架构](docs/engineering/architecture.md)：模块边界、目录、状态引擎和数据模型；
+- [联网后端服务](docs/engineering/backend-service.md)：API、身份、PostgreSQL、Admin 模型网关和 OSS 边界；
 - [安全、隐私与陪伴边界](docs/engineering/security-and-privacy.md)；
 - [研发流程与质量规范](docs/engineering/development-workflow.md)；
 - [贡献指南](CONTRIBUTING.md)；
@@ -36,12 +37,13 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 ## 技术方向
 
 ```text
-Tauri v2 + React + TypeScript + Rust + SQLite
+Tauri v2 + React + TypeScript + Rust + Node.js + PostgreSQL
 ```
 
 - macOS 14+、Apple Silicon 优先；
-- 本地优先，核心体验不依赖在线服务；
-- AI Provider 可替换，用户密钥进入安全存储；
+- 本地优先，小屋与基础生活体验不依赖在线服务；
+- AI Provider 由 Admin 配置，供应商密钥不进入客户端；
+- 安装令牌保存在 macOS Keychain，服务端只保存摘要；
 - Buddy Life Engine 与 React、Tauri 和具体模型解耦；
 - MVP 暂定采用 Developer ID 签名、公证并直接分发。
 

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
 import { HomeSurface } from "./HomeSurface";
+import { sendBuddyMessage } from "../../services/backend";
 
 vi.mock("../../platform/desktop", () => ({
   hideHome: vi.fn(),
@@ -10,11 +11,18 @@ vi.mock("../../platform/desktop", () => ({
   showHouse: vi.fn(),
 }));
 
+vi.mock("../../services/backend", () => ({
+  sendBuddyMessage: vi.fn(),
+}));
+
 describe("HomeSurface", () => {
   beforeEach(() => {
     vi.mocked(showHouse).mockResolvedValue(undefined);
     vi.mocked(hideHome).mockResolvedValue(undefined);
     vi.mocked(onHomeEntry).mockResolvedValue(vi.fn());
+    vi.mocked(sendBuddyMessage).mockResolvedValue(
+      "辛苦了，先在沙发上休息一会儿吧。",
+    );
   });
 
   it("shows the living room controls and Buddy welcome", () => {
@@ -41,7 +49,7 @@ describe("HomeSurface", () => {
     expect(hideHome).toHaveBeenCalledOnce();
   });
 
-  it("accepts a local placeholder chat message", async () => {
+  it("shows the reply returned by the Buddy backend", async () => {
     const user = userEvent.setup();
     render(<HomeSurface />);
 
@@ -51,6 +59,7 @@ describe("HomeSurface", () => {
     );
     await user.click(screen.getByRole("button", { name: "发送消息" }));
 
-    expect(screen.getByText(/今天有点累/)).toBeInTheDocument();
+    expect(sendBuddyMessage).toHaveBeenCalledWith("今天有点累");
+    expect(await screen.findByText(/先在沙发上休息/)).toBeInTheDocument();
   });
 });
