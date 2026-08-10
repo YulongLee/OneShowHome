@@ -20,6 +20,7 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 ## 产品文档
 
 - [产品基线](docs/product/product-foundation.md)：定位、用户、核心循环、原则和成功指标；
+- [世界观与领域架构](docs/product/world-architecture.md)：世界分层、Buddy 规则、时间、记忆和后端领域边界；
 - [MVP 产品规格](docs/product/mvp-spec.md)：范围、流程、功能和验收标准；
 - [体验与内容规范](docs/product/experience-guidelines.md)：概念、视觉、动画、文案和主动行为；
 - [产品路线图](docs/product/roadmap.md)：Phase 0–3 阶段门和退出条件。

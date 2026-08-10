@@ -5,6 +5,8 @@
 
 ## 1. 架构目标
 
+产品世界的分层、基本法则、聚合和领域事件命名由 [`world-architecture.md`](../product/world-architecture.md) 约束。本文负责这些规则在 macOS MVP 中的技术落地。
+
 - 桌面体验稳定，主窗口与小屋窗口生命周期清晰；
 - Buddy 行为不依赖 React 页面或在线 AI；
 - 数据默认本地保存，密钥与业务数据分离；
