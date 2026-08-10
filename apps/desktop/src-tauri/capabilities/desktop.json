@@ -6,6 +6,11 @@
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
-    "window-state:allow-save-window-state"
+    "window-state:allow-save-window-state",
+    "dialog:allow-open",
+    "dialog:allow-save",
+    "autostart:allow-enable",
+    "autostart:allow-disable",
+    "autostart:allow-is-enabled"
   ]
 }

@@ -9,6 +9,15 @@ const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
 pub struct LocalModelConfig {
     pub base_url: String,
     pub model_id: String,
+    #[serde(default)]
+    pub buddy: Option<LocalBuddyContext>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocalBuddyContext {
+    pub name: String,
+    pub personality: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -187,9 +196,28 @@ pub async fn chat_local_model(
     let endpoint = base_url
         .join("chat/completions")
         .map_err(|_| "本地模型地址格式不正确".to_string())?;
+    let buddy_name = config
+        .buddy
+        .as_ref()
+        .map(|buddy| buddy.name.trim())
+        .filter(|name| !name.is_empty())
+        .unwrap_or("Buddy")
+        .chars()
+        .take(20)
+        .collect::<String>();
+    let personality = config
+        .buddy
+        .as_ref()
+        .map(|buddy| buddy.personality.as_str())
+        .unwrap_or("warm");
+    let personality_instruction = match personality {
+        "lively" => "你活泼、好奇、有生活感",
+        "quiet" => "你沉静、细腻、有生活感",
+        _ => "你温暖、真诚、有生活感",
+    };
     let system_message = serde_json::json!({
         "role": "system",
-        "content": "你是住在用户 Mac 小屋里的 Buddy Milo。你温暖、真诚、有生活感，不是客服。先回应用户的情绪和意图，再自然继续对话。通常用不超过120个汉字的简体中文回答。不要虚构未提供的记忆。"
+        "content": format!("你是住在用户 Mac 小屋里的 Buddy {buddy_name}。{personality_instruction}，不是客服。先回应用户的情绪和意图，再自然继续对话。通常用不超过120个汉字的简体中文回答。不要虚构未提供的记忆。")
     });
     let response = client()?
         .post(endpoint)
@@ -273,6 +301,7 @@ mod tests {
         let tested = tauri::async_runtime::block_on(test_local_model(LocalModelConfig {
             base_url: base_url.clone(),
             model_id: String::new(),
+            buddy: None,
         }))
         .unwrap();
         assert_eq!(tested.model_id, "qwen3:8b");
@@ -280,6 +309,7 @@ mod tests {
             LocalModelConfig {
                 base_url,
                 model_id: tested.model_id,
+                buddy: None,
             },
             vec![LocalModelMessage {
                 role: LocalMessageRole::User,

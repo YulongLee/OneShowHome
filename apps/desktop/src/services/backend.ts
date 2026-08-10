@@ -94,3 +94,16 @@ export async function sendBuddyMessage(message: string): Promise<string> {
   window.localStorage.setItem(conversationKey, response.conversationId);
   return response.reply;
 }
+
+export async function syncBuddyProfile(profile: {
+  name: string;
+  personality: string;
+  avatarId: string;
+}): Promise<void> {
+  const credential = await ensureCredential();
+  await request(
+    "/v1/buddy",
+    { method: "PATCH", body: JSON.stringify(profile) },
+    credential.token,
+  );
+}

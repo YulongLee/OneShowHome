@@ -92,13 +92,14 @@ const loadLocalHistory = (): LocalMessage[] => {
 const sendLocalBuddyMessage = async (
   message: string,
   settings: ModelSettings["local"],
+  buddy?: { name: string; personality: string },
 ): Promise<string> => {
   const history = [
     ...loadLocalHistory(),
     { role: "user" as const, content: message },
   ].slice(-24);
   const response = await invoke<LocalModelReply>("chat_local_model", {
-    config: { baseUrl: settings.baseUrl, modelId: settings.modelId },
+    config: { baseUrl: settings.baseUrl, modelId: settings.modelId, buddy },
     messages: history,
   });
   window.localStorage.setItem(
@@ -113,10 +114,13 @@ const sendLocalBuddyMessage = async (
   return response.text;
 };
 
-export async function sendConfiguredBuddyMessage(message: string) {
+export async function sendConfiguredBuddyMessage(
+  message: string,
+  buddy?: { name: string; personality: string },
+) {
   const settings = loadModelSettings();
   return settings.mode === "local"
-    ? sendLocalBuddyMessage(message, settings.local)
+    ? sendLocalBuddyMessage(message, settings.local, buddy)
     : sendOfficialBuddyMessage(message);
 }
 

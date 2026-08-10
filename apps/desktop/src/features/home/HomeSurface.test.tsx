@@ -4,6 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
 import { HomeSurface } from "./HomeSurface";
 import { sendConfiguredBuddyMessage } from "../../services/model-runtime";
+import {
+  applyBuddyAction,
+  changeBuddyRoom,
+  loadDesktopSnapshot,
+} from "../../services/desktop-store";
 
 vi.mock("../../platform/desktop", () => ({
   hideHome: vi.fn(),
@@ -26,6 +31,45 @@ vi.mock("../../services/model-runtime", () => ({
   clearLocalConversation: vi.fn(),
 }));
 
+vi.mock("../../services/desktop-store", () => ({
+  loadDesktopSnapshot: vi.fn(),
+  applyBuddyAction: vi.fn(),
+  changeBuddyRoom: vi.fn(),
+  addDesktopMemory: vi.fn(),
+  deleteDesktopMemory: vi.fn(),
+  generateDesktopDiary: vi.fn(),
+  deleteDesktopDiary: vi.fn(),
+  importGalleryPhoto: vi.fn(),
+  deleteGalleryPhoto: vi.fn(),
+  galleryPhotoUrl: vi.fn((path: string) => path),
+  setDesktopSound: vi.fn(),
+  exportDesktopData: vi.fn(),
+  clearDesktopData: vi.fn(),
+  quitDesktopApp: vi.fn(),
+  readAutostart: vi.fn(() => Promise.resolve(false)),
+  writeAutostart: vi.fn(),
+}));
+
+const snapshot = {
+  profile: {
+    name: "Milo",
+    avatarId: "milo" as const,
+    personality: "warm" as const,
+    createdAt: 1,
+  },
+  state: {
+    mood: "happy" as const,
+    energy: 80,
+    location: "living_room" as const,
+    activity: "idle" as const,
+    updatedAt: 1,
+  },
+  memories: [],
+  diaries: [],
+  gallery: [],
+  settings: { soundEnabled: true },
+};
+
 describe("HomeSurface", () => {
   beforeEach(() => {
     vi.mocked(showHouse).mockResolvedValue(undefined);
@@ -34,27 +78,44 @@ describe("HomeSurface", () => {
     vi.mocked(sendConfiguredBuddyMessage).mockResolvedValue(
       "辛苦了，先在沙发上休息一会儿吧。",
     );
+    vi.mocked(loadDesktopSnapshot).mockResolvedValue(snapshot);
+    vi.mocked(applyBuddyAction).mockResolvedValue(snapshot);
+    vi.mocked(changeBuddyRoom).mockResolvedValue(snapshot);
   });
 
-  it("shows the living room controls and Buddy welcome", () => {
+  it("shows the living room controls and Buddy welcome", async () => {
     render(<HomeSurface />);
 
     expect(
-      screen.getByRole("navigation", { name: "房间导航" }),
+      await screen.findByRole("navigation", { name: "房间导航" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("欢迎回家，今晚想和我聊聊吗？"),
+      screen.getByText("我在这里等你。今天想一起做点什么？"),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("textbox", { name: "和 Buddy 聊聊" }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "厨房" })).toBeEnabled();
+  });
+
+  it("changes rooms and runs a Buddy interaction", async () => {
+    const user = userEvent.setup();
+    render(<HomeSurface />);
+
+    await user.click(await screen.findByRole("button", { name: "厨房" }));
+    expect(changeBuddyRoom).toHaveBeenCalledWith("kitchen");
+
+    await user.click(screen.getByRole("button", { name: "一起读书" }));
+    expect(applyBuddyAction).toHaveBeenCalledWith("read");
   });
 
   it("returns to the desktop house", async () => {
     const user = userEvent.setup();
     render(<HomeSurface />);
 
-    await user.click(screen.getByRole("button", { name: "返回桌面小屋" }));
+    await user.click(
+      await screen.findByRole("button", { name: "返回桌面小屋" }),
+    );
 
     expect(showHouse).toHaveBeenCalledOnce();
     expect(hideHome).toHaveBeenCalledOnce();
@@ -64,7 +125,8 @@ describe("HomeSurface", () => {
     const user = userEvent.setup();
     render(<HomeSurface />);
 
-    await user.click(screen.getByRole("button", { name: "设置" }));
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: "配置模型" }));
 
     expect(
       screen.getByRole("dialog", { name: "Buddy 的大脑" }),
@@ -78,12 +140,15 @@ describe("HomeSurface", () => {
     render(<HomeSurface />);
 
     await user.type(
-      screen.getByRole("textbox", { name: "和 Buddy 聊聊" }),
+      await screen.findByRole("textbox", { name: "和 Buddy 聊聊" }),
       "今天有点累",
     );
     await user.click(screen.getByRole("button", { name: "发送消息" }));
 
-    expect(sendConfiguredBuddyMessage).toHaveBeenCalledWith("今天有点累");
+    expect(sendConfiguredBuddyMessage).toHaveBeenCalledWith("今天有点累", {
+      name: "Milo",
+      personality: "warm",
+    });
     expect(await screen.findByText(/先在沙发上休息/)).toBeInTheDocument();
   });
 });

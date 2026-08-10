@@ -4,12 +4,15 @@ import buddyWave from "../../assets/house/buddy-wave.png";
 import cottageExterior from "../../assets/house/cottage-exterior.png";
 import { getTimeOfDay } from "../../lib/time";
 import { moveHouse, showHome } from "../../platform/desktop";
+import { loadDesktopSnapshot } from "../../services/desktop-store";
 
 export function HouseSurface() {
   const timeOfDay = useMemo(() => getTimeOfDay(new Date()), []);
   const [error, setError] = useState<string | null>(null);
   const [isEntering, setIsEntering] = useState(false);
   const [buddyPose, setBuddyPose] = useState<"idle" | "wave">("idle");
+  const [buddyName, setBuddyName] = useState("Buddy");
+  const [buddyActivity, setBuddyActivity] = useState("idle");
   const greetingTimer = useRef<number | null>(null);
   const dragDelay = useRef<number | null>(null);
   const dragState = useRef({
@@ -46,13 +49,23 @@ export function HouseSurface() {
   }, []);
 
   useEffect(() => {
+    void loadDesktopSnapshot()
+      .then((snapshot) => {
+        if (snapshot.profile) setBuddyName(snapshot.profile.name);
+        if (snapshot.state) setBuddyActivity(snapshot.state.activity);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (buddyActivity === "sleeping") return;
     const greetingInterval = window.setInterval(greet, 9000);
     return () => {
       window.clearInterval(greetingInterval);
       if (greetingTimer.current) window.clearTimeout(greetingTimer.current);
       if (dragDelay.current) window.clearTimeout(dragDelay.current);
     };
-  }, [greet]);
+  }, [buddyActivity, greet]);
 
   const clearDragDelay = () => {
     if (!dragDelay.current) return;
@@ -131,7 +144,7 @@ export function HouseSurface() {
             src={cottageExterior}
           />
           <span
-            aria-label={`Milo 正在${buddyPose === "wave" ? "向你招手" : "休息"}`}
+            aria-label={`${buddyName} 正在${buddyActivity === "sleeping" ? "睡觉" : buddyPose === "wave" ? "向你招手" : "休息"}`}
             className="buddy-stage"
           >
             <img
@@ -151,9 +164,9 @@ export function HouseSurface() {
           </span>
           <span
             aria-hidden="true"
-            className={`buddy-callout${buddyPose === "wave" ? " is-visible" : ""}`}
+            className={`buddy-callout${buddyPose === "wave" || buddyActivity === "sleeping" ? " is-visible" : ""}`}
           >
-            你好呀
+            {buddyActivity === "sleeping" ? "Zzz…" : "你好呀"}
           </span>
         </span>
         <span className="house-hint">轻点回家 · 按住拖动</span>

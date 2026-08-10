@@ -2,10 +2,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { moveHouse, showHome } from "../../platform/desktop";
 import { HouseSurface } from "./HouseSurface";
+import { loadDesktopSnapshot } from "../../services/desktop-store";
 
 vi.mock("../../platform/desktop", () => ({
   moveHouse: vi.fn(),
   showHome: vi.fn(),
+}));
+
+vi.mock("../../services/desktop-store", () => ({
+  loadDesktopSnapshot: vi.fn(),
 }));
 
 describe("HouseSurface", () => {
@@ -13,6 +18,25 @@ describe("HouseSurface", () => {
     vi.clearAllMocks();
     vi.mocked(moveHouse).mockResolvedValue(undefined);
     vi.mocked(showHome).mockResolvedValue(undefined);
+    vi.mocked(loadDesktopSnapshot).mockResolvedValue({
+      profile: {
+        name: "Milo",
+        avatarId: "milo",
+        personality: "warm",
+        createdAt: 1,
+      },
+      state: {
+        mood: "happy",
+        energy: 80,
+        location: "living_room",
+        activity: "idle",
+        updatedAt: 1,
+      },
+      memories: [],
+      diaries: [],
+      gallery: [],
+      settings: { soundEnabled: true },
+    });
   });
 
   it("opens Home when the house is clicked", async () => {
@@ -51,8 +75,10 @@ describe("HouseSurface", () => {
     vi.useRealTimers();
   });
 
-  it("greets the user when the house is hovered", () => {
+  it("greets the user when the house is hovered", async () => {
     render(<HouseSurface />);
+
+    expect(await screen.findByLabelText("Milo 正在休息")).toBeInTheDocument();
 
     fireEvent.pointerEnter(
       screen.getByRole("button", { name: "进入 OneShow Home" }),

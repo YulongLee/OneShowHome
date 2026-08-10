@@ -1,13 +1,16 @@
+mod desktop_store;
 mod local_model;
 mod windows;
+use desktop_store::{DesktopSnapshot, DesktopStore};
 use local_model::{chat_local_model, test_local_model};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
-    Emitter, RunEvent, WindowEvent,
+    Emitter, Manager, RunEvent, State, WindowEvent,
 };
+use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::StateFlags;
 use windows::{hide_house, hide_main, show_house, show_main, HOUSE_WINDOW, MAIN_WINDOW};
 
@@ -72,6 +75,129 @@ fn hide_main_window(app: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 fn show_house_window(app: tauri::AppHandle) -> Result<(), String> {
     show_house(&app).map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
+}
+
+#[tauri::command]
+fn load_desktop_snapshot(
+    store: State<'_, DesktopStore>,
+    now_ms: i64,
+    local_hour: u8,
+) -> Result<DesktopSnapshot, String> {
+    store.snapshot(now_ms, local_hour)
+}
+
+#[tauri::command]
+fn create_desktop_buddy(
+    store: State<'_, DesktopStore>,
+    name: String,
+    avatar_id: String,
+    personality: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.create_buddy(&name, &avatar_id, &personality, now_ms)
+}
+
+#[tauri::command]
+fn apply_buddy_action(
+    store: State<'_, DesktopStore>,
+    action: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.apply_action(&action, now_ms)
+}
+
+#[tauri::command]
+fn change_buddy_room(
+    store: State<'_, DesktopStore>,
+    room: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.change_room(&room, now_ms)
+}
+
+#[tauri::command]
+fn add_desktop_memory(
+    store: State<'_, DesktopStore>,
+    memory_type: String,
+    content: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.add_memory(&memory_type, &content, now_ms)
+}
+
+#[tauri::command]
+fn delete_desktop_memory(
+    store: State<'_, DesktopStore>,
+    id: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.delete_memory(id)
+}
+
+#[tauri::command]
+fn generate_desktop_diary(
+    store: State<'_, DesktopStore>,
+    local_date: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.generate_diary(&local_date, now_ms)
+}
+
+#[tauri::command]
+fn delete_desktop_diary(
+    store: State<'_, DesktopStore>,
+    id: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.delete_diary(id)
+}
+
+#[tauri::command]
+fn import_gallery_photo(
+    store: State<'_, DesktopStore>,
+    source: String,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.import_photo(&source, now_ms)
+}
+
+#[tauri::command]
+fn delete_gallery_photo(
+    store: State<'_, DesktopStore>,
+    id: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.delete_photo(id)
+}
+
+#[tauri::command]
+fn set_desktop_sound(
+    store: State<'_, DesktopStore>,
+    enabled: bool,
+    now_ms: i64,
+) -> Result<DesktopSnapshot, String> {
+    store.set_sound(enabled, now_ms)
+}
+
+#[tauri::command]
+fn export_desktop_data(
+    store: State<'_, DesktopStore>,
+    destination: String,
+    now_ms: i64,
+    local_hour: u8,
+) -> Result<(), String> {
+    store.export_data(&destination, now_ms, local_hour)
+}
+
+#[tauri::command]
+fn clear_desktop_data(store: State<'_, DesktopStore>) -> Result<(), String> {
+    store.clear_all()?;
+    if let Ok(entry) = keyring::Entry::new(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT) {
+        let _ = entry.delete_credential();
+    }
+    Ok(())
 }
 
 #[tauri::command]
@@ -144,6 +270,11 @@ pub fn run() {
     let preview_transition_on_ready = should_preview_transition(&arguments);
     let show_main_on_ready = should_show_main(&arguments) || preview_transition_on_ready;
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            None,
+        ))
         .plugin(
             tauri_plugin_window_state::Builder::default()
                 .with_state_flags(StateFlags::POSITION)
@@ -156,12 +287,29 @@ pub fn run() {
             show_main_window,
             hide_main_window,
             show_house_window,
+            quit_app,
+            load_desktop_snapshot,
+            create_desktop_buddy,
+            apply_buddy_action,
+            change_buddy_room,
+            add_desktop_memory,
+            delete_desktop_memory,
+            generate_desktop_diary,
+            delete_desktop_diary,
+            import_gallery_photo,
+            delete_gallery_photo,
+            set_desktop_sound,
+            export_desktop_data,
+            clear_desktop_data,
             load_installation_credential,
             save_installation_credential,
             test_local_model,
             chat_local_model
         ])
         .setup(|app| {
+            let data_dir = app.path().app_data_dir()?;
+            let store = DesktopStore::open(data_dir).map_err(std::io::Error::other)?;
+            app.manage(store);
             create_tray(app)?;
             Ok(())
         })

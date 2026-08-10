@@ -4,76 +4,159 @@ import {
   BookOpenText,
   Brain,
   ChatCircleDots,
-  CloudMoon,
   CookingPot,
   FlowerLotus,
   GearSix,
   Heart,
   House,
   Images,
+  Leaf,
+  MoonStars,
   Smiley,
   Sparkle,
+  Sun,
 } from "@phosphor-icons/react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import doorwayScene from "../../assets/house/cottage-doorway.png";
 import livingRoomScene from "../../assets/house/living-room.png";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
-import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
+import { syncBuddyProfile } from "../../services/backend";
+import {
+  applyBuddyAction,
+  changeBuddyRoom,
+  loadDesktopSnapshot,
+  type BuddyState,
+  type DesktopSnapshot,
+} from "../../services/desktop-store";
 import {
   loadModelSettings,
   sendConfiguredBuddyMessage,
   type ModelSettings,
 } from "../../services/model-runtime";
+import { BuddyOnboarding } from "../onboarding/BuddyOnboarding";
+import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
+import { HomeDialog, type HomeDialogKind } from "./HomeDialogs";
 
-const rooms = [
-  { label: "客厅", icon: House, available: true },
-  { label: "厨房", icon: CookingPot, available: false },
-  { label: "卧室", icon: Bed, available: false },
-  { label: "花园", icon: FlowerLotus, available: false },
-] as const;
+const rooms: Array<{
+  id: BuddyState["location"];
+  label: string;
+  icon: typeof House;
+}> = [
+  { id: "living_room", label: "客厅", icon: House },
+  { id: "kitchen", label: "厨房", icon: CookingPot },
+  { id: "bedroom", label: "卧室", icon: Bed },
+  { id: "garden", label: "花园", icon: FlowerLotus },
+];
 
-const quickActions = [
-  { label: "日记", icon: BookOpenText },
-  { label: "记忆", icon: Brain },
-  { label: "相册", icon: Images },
-  { label: "设置", icon: GearSix },
-] as const;
+const quickActions: Array<{
+  id: HomeDialogKind;
+  label: string;
+  icon: typeof House;
+}> = [
+  { id: "diary", label: "日记", icon: BookOpenText },
+  { id: "memory", label: "记忆", icon: Brain },
+  { id: "gallery", label: "相册", icon: Images },
+  { id: "settings", label: "设置", icon: GearSix },
+];
+
+const roomCopy = {
+  living_room: { title: "客厅", note: "适合聊天、读书和休息", symbol: "🛋️" },
+  kitchen: { title: "厨房", note: "一起准备今天的小餐点", symbol: "🍲" },
+  bedroom: { title: "卧室", note: "让 Buddy 安静恢复精力", symbol: "🛏️" },
+  garden: { title: "花园", note: "照顾植物，看看它们的变化", symbol: "🌿" },
+} as const;
+
+const actions: Record<
+  BuddyState["location"],
+  Array<{ id: string; label: string }>
+> = {
+  living_room: [
+    { id: "play", label: "陪我玩" },
+    { id: "read", label: "一起读书" },
+    { id: "rest", label: "沙发休息" },
+  ],
+  kitchen: [{ id: "cook", label: "一起做饭" }],
+  bedroom: [{ id: "sleep", label: "好好睡觉" }],
+  garden: [{ id: "garden", label: "照顾植物" }],
+};
+
+const moodLabels = {
+  happy: "心情很好",
+  calm: "平静安心",
+  tired: "有点疲惫",
+} as const;
+const activityLines = {
+  idle: "我在这里等你。今天想一起做点什么？",
+  reading: "这里很安静，正好可以一起读几页书。",
+  cooking: "厨房里有暖暖的香气，要一起准备晚餐吗？",
+  sleeping: "我先安静睡一会儿，醒来再陪你。",
+  gardening: "植物今天也在努力长大呢。",
+  thinking: "我在整理今天的小小心事。",
+} as const;
 
 export function HomeSurface() {
+  const [snapshot, setSnapshot] = useState<DesktopSnapshot | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isEntering, setIsEntering] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [chat, setChat] = useState("");
-  const [buddyLine, setBuddyLine] = useState("欢迎回家，今晚想和我聊聊吗？");
+  const [buddyLine, setBuddyLine] = useState("欢迎回家。今天想和我聊聊吗？");
   const [isSending, setIsSending] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dialog, setDialog] = useState<HomeDialogKind | null>(null);
+  const [modelSettingsOpen, setModelSettingsOpen] = useState(false);
   const [modelSettings, setModelSettings] =
     useState<ModelSettings>(loadModelSettings);
+  const [clock, setClock] = useState(new Date());
   const transitionTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    void loadDesktopSnapshot()
+      .then((next) => {
+        setSnapshot(next);
+        if (next.state) setBuddyLine(activityLines[next.state.activity]);
+      })
+      .catch(() =>
+        setLoadError("无法打开这台 Mac 上的小屋资料。请重新启动应用后再试。"),
+      );
+    const timer = window.setInterval(() => setClock(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let disposed = false;
     let stopListening: (() => void) | undefined;
-
     void onHomeEntry(() => {
       setIsEntering(true);
       if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-      transitionTimer.current = window.setTimeout(() => {
-        setIsEntering(false);
-      }, 1850);
+      transitionTimer.current = window.setTimeout(
+        () => setIsEntering(false),
+        1850,
+      );
     })
-      .then((unlisten) => {
-        if (disposed) unlisten();
-        else stopListening = unlisten;
-      })
+      .then((unlisten) => (disposed ? unlisten() : (stopListening = unlisten)))
       .catch(() => undefined);
-
     return () => {
       disposed = true;
       stopListening?.();
       if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
     };
   }, []);
+
+  const state = snapshot?.state;
+  const profile = snapshot?.profile;
+  const room = state?.location ?? "living_room";
+  const roomInfo = roomCopy[room];
+  const isNight = clock.getHours() < 7 || clock.getHours() >= 19;
+  const formattedTime = useMemo(
+    () =>
+      new Intl.DateTimeFormat("zh-CN", {
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(clock),
+    [clock],
+  );
 
   const returnToDesktop = async () => {
     setNotice(null);
@@ -85,6 +168,31 @@ export function HomeSurface() {
     }
   };
 
+  const changeRoom = async (nextRoom: BuddyState["location"]) => {
+    if (nextRoom === room) return;
+    setNotice("Buddy 正在换个房间…");
+    try {
+      const next = await changeBuddyRoom(nextRoom);
+      setSnapshot(next);
+      if (next.state) setBuddyLine(activityLines[next.state.activity]);
+      setNotice(null);
+    } catch {
+      setNotice("刚才没有走到那个房间，请再试一次。");
+    }
+  };
+
+  const interact = async (action: string, label: string) => {
+    setNotice(`正在${label}…`);
+    try {
+      const next = await applyBuddyAction(action);
+      setSnapshot(next);
+      if (next.state) setBuddyLine(activityLines[next.state.activity]);
+      setNotice(`${profile?.name ?? "Buddy"} 很喜欢和你${label}。`);
+    } catch {
+      setNotice("这次互动没有完成，请再试一次。");
+    }
+  };
+
   const submitChat = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = chat.trim();
@@ -93,7 +201,12 @@ export function HomeSurface() {
     setIsSending(true);
     setBuddyLine("让我想一想…");
     try {
-      setBuddyLine(await sendConfiguredBuddyMessage(content));
+      setBuddyLine(
+        await sendConfiguredBuddyMessage(content, {
+          name: profile?.name ?? "Buddy",
+          personality: profile?.personality ?? "warm",
+        }),
+      );
     } catch {
       setBuddyLine(
         modelSettings.mode === "local"
@@ -105,14 +218,47 @@ export function HomeSurface() {
     }
   };
 
+  if (loadError)
+    return (
+      <main className="desktop-loading">
+        <House weight="fill" />
+        <h1>小屋没有打开</h1>
+        <p>{loadError}</p>
+        <button onClick={() => window.location.reload()} type="button">
+          重新尝试
+        </button>
+      </main>
+    );
+  if (!snapshot)
+    return (
+      <main className="desktop-loading">
+        <Sparkle weight="fill" />
+        <p>正在点亮小屋的灯…</p>
+      </main>
+    );
+  if (!profile || !state)
+    return (
+      <BuddyOnboarding
+        onCreated={(next) => {
+          setSnapshot(next);
+          setBuddyLine("你好呀，我们终于见面了。以后请多多关照。");
+          if (next.profile)
+            void syncBuddyProfile(next.profile).catch(() => undefined);
+        }}
+      />
+    );
+
   return (
-    <main className="home-shell">
+    <main className={`home-shell room-${room}${isNight ? " is-night" : ""}`}>
       <img
-        alt="温暖的 OneShow Home 客厅"
+        alt={`温暖的 OneShow Home ${roomInfo.title}`}
         className="home-scene"
         src={livingRoomScene}
       />
       <div aria-hidden="true" className="scene-shade" />
+      <div aria-hidden="true" className="room-atmosphere">
+        <span>{roomInfo.symbol}</span>
+      </div>
 
       <header className="home-titlebar">
         <div className="brand-lockup">
@@ -120,7 +266,9 @@ export function HomeSurface() {
             <House weight="fill" />
           </span>
           <span>OneShow Home</span>
-          <span className="home-kicker">欢迎回家</span>
+          <span className="home-kicker">
+            {roomInfo.title} · {roomInfo.note}
+          </span>
         </div>
         <button
           aria-label="返回桌面小屋"
@@ -133,54 +281,52 @@ export function HomeSurface() {
       </header>
 
       <section aria-label="Buddy 状态" className="buddy-status">
-        <img alt="Milo" className="buddy-avatar" src={buddyAvatar} />
+        <img
+          alt={profile.name}
+          className={`buddy-avatar avatar-${profile.avatarId}`}
+          src={buddyAvatar}
+        />
         <div>
-          <strong>Milo</strong>
+          <strong>{profile.name}</strong>
           <span>
-            <Heart weight="fill" /> 心情很好 · 精力 80%
+            <Heart weight="fill" /> {moodLabels[state.mood]} · 精力{" "}
+            {state.energy}%
           </span>
         </div>
       </section>
 
       <nav aria-label="房间导航" className="room-rail">
-        {rooms.map(({ available, icon: Icon, label }) => (
+        {rooms.map(({ id, icon: Icon, label }) => (
           <button
-            aria-label={available ? `${label}（当前）` : `${label}（即将开放）`}
-            className={available ? "room-button is-active" : "room-button"}
-            key={label}
-            onClick={() =>
-              setNotice(
-                available ? "你正在客厅。" : `${label}会在下一阶段开放。`,
-              )
-            }
+            aria-label={id === room ? `${label}（当前）` : label}
+            className={id === room ? "room-button is-active" : "room-button"}
+            key={id}
+            onClick={() => void changeRoom(id)}
             type="button"
           >
-            <Icon weight={available ? "fill" : "regular"} />
+            <Icon weight={id === room ? "fill" : "regular"} />
             <span>{label}</span>
           </button>
         ))}
       </nav>
 
-      <section aria-label="时间与天气" className="weather-card">
+      <section aria-label="本地时间" className="weather-card">
         <div>
-          <span>周日</span>
-          <strong>20:30</strong>
+          <span>{formattedTime.split(" ")[0]}</span>
+          <strong>{formattedTime.split(" ").slice(1).join(" ")}</strong>
         </div>
         <div>
-          <CloudMoon weight="fill" />
-          <span>18°C · 晴</span>
+          {isNight ? <MoonStars weight="fill" /> : <Sun weight="fill" />}
+          <span>{isNight ? "夜晚" : "白天"} · 本地时间</span>
         </div>
       </section>
 
       <aside aria-label="快捷功能" className="quick-rail">
-        {quickActions.map(({ icon: Icon, label }) => (
+        {quickActions.map(({ id, icon: Icon, label }) => (
           <button
-            key={label}
-            onClick={() =>
-              label === "设置"
-                ? setSettingsOpen(true)
-                : setNotice(`${label}功能将在后续阶段开放。`)
-            }
+            aria-label={label}
+            key={id}
+            onClick={() => setDialog(id)}
             type="button"
           >
             <Icon />
@@ -188,6 +334,19 @@ export function HomeSurface() {
           </button>
         ))}
       </aside>
+
+      <section aria-label="房间互动" className="interaction-palette">
+        <Leaf weight="fill" />
+        {actions[room].map((action) => (
+          <button
+            key={action.id}
+            onClick={() => void interact(action.id, action.label)}
+            type="button"
+          >
+            {action.label}
+          </button>
+        ))}
+      </section>
 
       <section aria-live="polite" className="buddy-bubble">
         <Smiley weight="fill" />
@@ -203,10 +362,10 @@ export function HomeSurface() {
           和 Buddy 聊聊
         </label>
         <input
+          disabled={isSending}
           id="buddy-chat"
           onChange={(event) => setChat(event.target.value)}
-          placeholder="和 Buddy 聊聊…"
-          disabled={isSending}
+          placeholder={`和 ${profile.name} 聊聊…`}
           value={chat}
         />
         <button aria-label="发送消息" disabled={isSending} type="submit">
@@ -219,14 +378,13 @@ export function HomeSurface() {
           {notice}
         </p>
       ) : null}
-
       {isEntering ? (
         <div
           aria-label="正在进入小屋"
           className="entry-transition"
           role="status"
         >
-          <img alt="打开的门通向温暖客厅" src={doorwayScene} />
+          <img alt="打开的门通向温暖小屋" src={doorwayScene} />
           <div aria-hidden="true" className="entry-warmth" />
           <span>
             <Sparkle weight="fill" />
@@ -235,9 +393,25 @@ export function HomeSurface() {
         </div>
       ) : null}
 
-      {settingsOpen ? (
+      {dialog ? (
+        <HomeDialog
+          kind={dialog}
+          onClose={() => setDialog(null)}
+          onOpenModelSettings={() => {
+            setDialog(null);
+            setModelSettingsOpen(true);
+          }}
+          onReset={() => {
+            setDialog(null);
+            void loadDesktopSnapshot().then(setSnapshot);
+          }}
+          onSnapshot={setSnapshot}
+          snapshot={snapshot}
+        />
+      ) : null}
+      {modelSettingsOpen ? (
         <ModelSettingsDialog
-          onClose={() => setSettingsOpen(false)}
+          onClose={() => setModelSettingsOpen(false)}
           onSaved={(settings) => {
             setModelSettings(settings);
             setNotice(
