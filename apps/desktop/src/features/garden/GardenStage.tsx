@@ -3,15 +3,24 @@ import {
   Cow,
   Drop,
   Fish,
+  Footprints,
   Heart,
   Leaf,
   LockSimple,
   Plant,
   Sparkle,
 } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent,
+} from "react";
 import animalTrio from "../../assets/farm/animal-trio.png";
 import buddyFishing from "../../assets/farm/buddy-fishing.png";
+import buddyWalking from "../../assets/farm/buddy-walking.png";
 import farmScene from "../../assets/farm/farm-scene.png";
 import cropCarrot from "../../assets/garden/crop-carrot.png";
 import cropLavender from "../../assets/garden/crop-lavender.png";
@@ -32,6 +41,8 @@ import {
 } from "../../services/desktop-store";
 
 type FarmMode = "plant" | "fish" | "animal";
+type BuddyPose = "walking" | "gardening" | "fishing";
+type FarmPoint = { left: number; top: number };
 type CropMeta = {
   id: GardenCropId;
   name: string;
@@ -135,11 +146,24 @@ export function GardenStage({
   const [selectedCrop, setSelectedCrop] = useState<GardenCropId>("tomato");
   const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [buddyPose, setBuddyPose] = useState<BuddyPose>("walking");
+  const [buddyPosition, setBuddyPosition] = useState<FarmPoint>({
+    left: 43,
+    top: 41,
+  });
+  const [walkMarker, setWalkMarker] = useState<FarmPoint | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
+  const [facing, setFacing] = useState<"left" | "right">("right");
+  const [walkDuration, setWalkDuration] = useState(600);
   const [now, setNow] = useState(initialNow);
+  const movementTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 10_000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearInterval(timer);
+      if (movementTimer.current) window.clearTimeout(movementTimer.current);
+    };
   }, []);
 
   const selectedPlot = snapshot.garden.plots.find(
@@ -167,12 +191,65 @@ export function GardenStage({
       : (snapshot.garden.xp - currentLevelStart) /
         (snapshot.garden.nextLevelXp - currentLevelStart);
 
+  const walkTo = (target: FarmPoint) =>
+    new Promise<void>((resolve) => {
+      if (movementTimer.current) window.clearTimeout(movementTimer.current);
+      const distance = Math.hypot(
+        target.left - buddyPosition.left,
+        target.top - buddyPosition.top,
+      );
+      const duration = Math.min(1450, Math.max(360, distance * 34));
+      setFacing(target.left < buddyPosition.left ? "left" : "right");
+      setWalkDuration(duration);
+      setBuddyPose("walking");
+      setWalkMarker(target);
+      setIsMoving(true);
+      setBuddyPosition(target);
+      movementTimer.current = window.setTimeout(() => {
+        setIsMoving(false);
+        setWalkMarker(null);
+        movementTimer.current = null;
+        resolve();
+      }, duration);
+    });
+
+  const moveOnMap = (event: PointerEvent<HTMLButtonElement>) => {
+    if (busy || isMoving || event.button !== 0) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    let left = ((event.clientX - bounds.left) / bounds.width) * 100;
+    let top = ((event.clientY - bounds.top) / bounds.height) * 100;
+    left = Math.min(82, Math.max(13, left));
+    top = Math.min(76, Math.max(31, top));
+    if (left < 38 && top < 45) top = 45;
+    if (left > 56 && top < 40) top = 40;
+    if (left > 74) left = 72;
+    onBuddyLine("我过去看看，等我一下。");
+    void walkTo({ left, top }).then(() =>
+      onBuddyLine("到了。这里的风景好像也有一点不一样。"),
+    );
+  };
+
   const runPlotAction = async (plot: GardenPlot) => {
     if (busy) return;
     setSelectedPlotId(plot.plotId);
-    if (plot.cropId && (plot.readyAt ?? Number.MAX_SAFE_INTEGER) > now) return;
+    const position = plotPositions[plot.plotId - 1];
+    if (plot.cropId && (plot.readyAt ?? Number.MAX_SAFE_INTEGER) > now) {
+      setBusy(`plot-${plot.plotId}`);
+      try {
+        await walkTo({ left: position.left - 6, top: position.top - 8 });
+        setBuddyPose("gardening");
+        onBuddyLine(
+          `${cropById(plot.cropId)?.name ?? "作物"}还在慢慢长大，我们就在旁边看看它。`,
+        );
+      } finally {
+        setBusy(null);
+      }
+      return;
+    }
     setBusy(`plot-${plot.plotId}`);
     try {
+      await walkTo({ left: position.left - 6, top: position.top - 8 });
+      setBuddyPose("gardening");
       const next = plot.cropId
         ? await harvestGardenPlot(plot.plotId)
         : await plantGardenCrop(plot.plotId, selectedCrop);
@@ -199,6 +276,9 @@ export function GardenStage({
     if (!selectedPlot || busy) return;
     setBusy(`plot-${selectedPlot.plotId}`);
     try {
+      const position = plotPositions[selectedPlot.plotId - 1];
+      await walkTo({ left: position.left - 6, top: position.top - 8 });
+      setBuddyPose("gardening");
       const next = await waterGardenPlot(selectedPlot.plotId);
       onSnapshot(next);
       onNotice("浇水完成，成熟时间提前了 15%。");
@@ -214,8 +294,11 @@ export function GardenStage({
     if (busy) return;
     setMode("fish");
     setBusy("fish");
-    onBuddyLine("嘘……水面有一点动静，我来试试。");
+    onBuddyLine("我先走到池塘边，再看看水里的动静。");
     try {
+      await walkTo({ left: 68, top: 43 });
+      setBuddyPose("fishing");
+      onBuddyLine("嘘……水面有一点动静，我来试试。");
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
       const previous = new Map(
         snapshot.garden.fishInventory.map((item) => [
@@ -244,6 +327,13 @@ export function GardenStage({
     setMode("animal");
     setBusy(animalId);
     try {
+      const animalTargets: Record<typeof animalId, FarmPoint> = {
+        momo: { left: 54, top: 28 },
+        yuki: { left: 65, top: 28 },
+        koko: { left: 75, top: 29 },
+      };
+      await walkTo(animalTargets[animalId]);
+      setBuddyPose("walking");
       const next = await feedFarmAnimal(animalId);
       onSnapshot(next);
       const animal = animalMeta[animalId];
@@ -265,6 +355,25 @@ export function GardenStage({
     >
       <img alt="OneShow Home 春日农场" className="home-scene" src={farmScene} />
       <div aria-hidden="true" className="scene-shade" />
+      <button
+        aria-label="点击农场地面移动 Buddy"
+        className="farm-walk-layer"
+        disabled={busy !== null}
+        onPointerDown={moveOnMap}
+        type="button"
+      />
+      {walkMarker ? (
+        <span
+          aria-hidden="true"
+          className="farm-walk-marker"
+          style={{
+            left: `${walkMarker.left}%`,
+            top: `${walkMarker.top + 15}%`,
+          }}
+        >
+          <Footprints weight="fill" />
+        </span>
+      ) : null}
 
       <div className="farm-level-card">
         <span>
@@ -369,9 +478,29 @@ export function GardenStage({
 
       <div
         aria-hidden="true"
-        className={`farm-buddy${busy ? " is-acting" : ""}`}
+        className={`farm-buddy${busy ? " is-acting" : ""}${isMoving ? " is-moving" : ""} is-facing-${facing}`}
+        style={
+          {
+            left: `${buddyPosition.left}%`,
+            top: `${buddyPosition.top}%`,
+            width:
+              buddyPose === "fishing" && !isMoving
+                ? "23%"
+                : `${11 + buddyPosition.top * 0.1 + (buddyPose === "gardening" ? 1 : 0)}%`,
+            "--walk-duration": `${walkDuration}ms`,
+          } as CSSProperties
+        }
       >
-        <img alt="" src={mode === "fish" ? buddyFishing : buddyGardening} />
+        <img
+          alt=""
+          src={
+            buddyPose === "fishing"
+              ? buddyFishing
+              : buddyPose === "gardening"
+                ? buddyGardening
+                : buddyWalking
+          }
+        />
       </div>
 
       {mode === "plant" && selectedPlot?.cropId ? (
