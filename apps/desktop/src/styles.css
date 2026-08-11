@@ -3194,6 +3194,10 @@ html[data-surface="main"] #root {
   );
 }
 
+.home-shell.is-night .farm-stage::after {
+  background: transparent;
+}
+
 .farm-light-layer,
 .farm-rain-layer {
   position: absolute;

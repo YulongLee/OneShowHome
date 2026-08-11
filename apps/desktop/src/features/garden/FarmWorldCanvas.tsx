@@ -1,15 +1,22 @@
 import { useEffect, useRef } from "react";
 import animalAtlas from "../../assets/farm/animal-trio.png";
 import environmentAtlas from "../../assets/farm/dynamic-environment-atlas-v1.png";
+import vista from "../../assets/farm/farm-world-anime-v3.png";
 import petAtlas from "../../assets/farm/dynamic-pet-corgi-v1.png";
 import terrain from "../../assets/farm/dynamic-terrain-v1.png";
+import cropCarrot from "../../assets/garden/crop-carrot.png";
+import cropLettuce from "../../assets/garden/crop-lettuce.png";
+import cropStrawberry from "../../assets/garden/crop-strawberry.png";
+import cropSunflower from "../../assets/garden/crop-sunflower.png";
 import type { FarmWorldSnapshot } from "./farm-world-engine";
 
 type LoadedAssets = {
   animals: HTMLImageElement;
+  crops: HTMLImageElement[];
   environment: HTMLImageElement;
   pet: HTMLImageElement;
   terrain: HTMLImageElement;
+  vista: HTMLImageElement;
 };
 
 type TreeEntity = {
@@ -23,12 +30,19 @@ type TreeEntity = {
 const trees: TreeEntity[] = [
   { x: 0.035, y: 0.33, scale: 0.13, phase: 0.2, speed: 0.8 },
   { x: 0.09, y: 0.2, scale: 0.1, phase: 1.8, speed: 0.7 },
+  { x: 0.17, y: 0.13, scale: 0.085, phase: 2.2, speed: 0.75 },
+  { x: 0.29, y: 0.11, scale: 0.095, phase: 4.8, speed: 0.8 },
   { x: 0.4, y: 0.13, scale: 0.11, phase: 3.1, speed: 0.85 },
+  { x: 0.53, y: 0.1, scale: 0.085, phase: 5.2, speed: 0.7 },
   { x: 0.68, y: 0.12, scale: 0.12, phase: 4.3, speed: 0.72 },
+  { x: 0.79, y: 0.14, scale: 0.09, phase: 1.2, speed: 0.84 },
   { x: 0.91, y: 0.26, scale: 0.13, phase: 2.4, speed: 0.9 },
   { x: 0.955, y: 0.52, scale: 0.11, phase: 5.5, speed: 0.78 },
+  { x: 0.94, y: 0.69, scale: 0.09, phase: 2.9, speed: 0.82 },
   { x: 0.07, y: 0.77, scale: 0.12, phase: 3.8, speed: 0.82 },
   { x: 0.19, y: 0.89, scale: 0.09, phase: 0.9, speed: 0.76 },
+  { x: 0.31, y: 0.93, scale: 0.075, phase: 4.5, speed: 0.88 },
+  { x: 0.72, y: 0.92, scale: 0.075, phase: 3.4, speed: 0.74 },
 ];
 
 const loadImage = (source: string) =>
@@ -102,6 +116,47 @@ const drawEntityShadow = (
   context.restore();
 };
 
+const drawCropField = (
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+  elapsed: number,
+  field: {
+    columns: number;
+    rows: number;
+    startX: number;
+    startY: number;
+    stepX: number;
+    stepY: number;
+    scale: number;
+    phase: number;
+  },
+) => {
+  for (let row = 0; row < field.rows; row += 1) {
+    for (let column = 0; column < field.columns; column += 1) {
+      const index = row * field.columns + column;
+      const entityWidth = width * field.scale * (0.88 + row * 0.055);
+      const entityHeight = entityWidth * 0.88;
+      const sway =
+        Math.sin(elapsed * 0.0014 + field.phase + index * 0.43) * 0.035;
+      const x = width * (field.startX + column * field.stepX + row * 0.006);
+      const y = height * (field.startY + row * field.stepY);
+      context.save();
+      context.translate(x, y);
+      context.rotate(sway);
+      context.drawImage(
+        image,
+        -entityWidth / 2,
+        -entityHeight,
+        entityWidth,
+        entityHeight,
+      );
+      context.restore();
+    }
+  }
+};
+
 function renderWorld(
   context: CanvasRenderingContext2D,
   assets: LoadedAssets,
@@ -110,17 +165,29 @@ function renderWorld(
   height: number,
   elapsed: number,
 ) {
-  const phaseColors = {
-    morning: ["#f7cfad", "#9bd8e9"],
-    day: ["#79c8ed", "#d9f3e6"],
-    evening: ["#d77862", "#f4c68e"],
-    night: ["#12234c", "#425b7a"],
-  } as const;
-  const sky = context.createLinearGradient(0, 0, 0, height);
-  sky.addColorStop(0, phaseColors[world.phase][0]);
-  sky.addColorStop(1, phaseColors[world.phase][1]);
-  context.fillStyle = sky;
+  context.fillStyle = world.phase === "night" ? "#203e70" : "#4db8ed";
   context.fillRect(0, 0, width, height);
+
+  context.save();
+  context.globalAlpha = world.weather === "rain" ? 0.8 : 1;
+  context.drawImage(assets.vista, 0, 0, width, height);
+  context.restore();
+
+  const vistaOffset = Math.sin(elapsed * 0.000035) * width * 0.006;
+  context.save();
+  context.globalAlpha = world.weather === "rain" ? 0.8 : 1;
+  context.drawImage(
+    assets.vista,
+    0,
+    0,
+    assets.vista.naturalWidth,
+    assets.vista.naturalHeight * 0.29,
+    -width * 0.012 + vistaOffset,
+    0,
+    width * 1.024,
+    height * 0.31,
+  );
+  context.restore();
 
   const starAlpha = world.phase === "night" ? 0.82 : 0;
   if (starAlpha) {
@@ -138,7 +205,7 @@ function renderWorld(
     context.restore();
   }
 
-  const cloudAlpha = world.weather === "rain" ? 0.74 : 0.9;
+  const cloudAlpha = world.weather === "rain" ? 0.16 : 0.2;
   const cloudSpeed = world.weather === "rain" ? 0.018 : 0.009;
   [
     { offset: 0.04, y: 0.12, scale: 0.85 },
@@ -157,39 +224,7 @@ function renderWorld(
   });
 
   context.save();
-  context.globalAlpha = world.phase === "night" ? 0.25 : 0.16;
-  context.fillStyle = world.phase === "evening" ? "#80585a" : "#5c7c76";
-  context.beginPath();
-  context.moveTo(0, height * 0.31);
-  for (let x = 0; x <= width; x += width / 8) {
-    const y = height * (0.2 + 0.04 * Math.sin(x * 0.016));
-    context.lineTo(x, y);
-  }
-  context.lineTo(width, height * 0.45);
-  context.lineTo(0, height * 0.45);
-  context.closePath();
-  context.fill();
-  context.restore();
-
-  const riverGradient = context.createLinearGradient(
-    width * 0.75,
-    height * 0.35,
-    width,
-    height,
-  );
-  riverGradient.addColorStop(
-    0,
-    world.phase === "night" ? "#315b75" : "#55b9d1",
-  );
-  riverGradient.addColorStop(
-    1,
-    world.phase === "night" ? "#1f445f" : "#8bd8dd",
-  );
-  context.fillStyle = riverGradient;
-  context.fillRect(0, height * 0.69, width, height * 0.31);
-  context.fillRect(width * 0.86, height * 0.2, width * 0.14, height * 0.8);
-  context.save();
-  context.strokeStyle = "rgb(232 255 247 / 58%)";
+  context.strokeStyle = "rgb(232 255 247 / 32%)";
   context.lineWidth = Math.max(1.2, width * 0.0016);
   for (let row = 0; row < 11; row += 1) {
     const flow = (elapsed * (0.018 + row * 0.001)) % (width * 0.19);
@@ -213,6 +248,78 @@ function renderWorld(
         : "none";
   context.drawImage(assets.terrain, 0, 0, width, height);
   context.restore();
+
+  const cropFields = [
+    {
+      image: assets.crops[0],
+      columns: 5,
+      rows: 3,
+      startX: 0.155,
+      startY: 0.615,
+      stepX: 0.047,
+      stepY: 0.055,
+      scale: 0.047,
+      phase: 0.2,
+    },
+    {
+      image: assets.crops[1],
+      columns: 4,
+      rows: 3,
+      startX: 0.39,
+      startY: 0.59,
+      stepX: 0.045,
+      stepY: 0.055,
+      scale: 0.042,
+      phase: 1.4,
+    },
+    {
+      image: assets.crops[2],
+      columns: 5,
+      rows: 2,
+      startX: 0.52,
+      startY: 0.705,
+      stepX: 0.043,
+      stepY: 0.06,
+      scale: 0.044,
+      phase: 2.7,
+    },
+    {
+      image: assets.crops[3],
+      columns: 6,
+      rows: 2,
+      startX: 0.525,
+      startY: 0.505,
+      stepX: 0.039,
+      stepY: 0.055,
+      scale: 0.04,
+      phase: 4.1,
+    },
+    {
+      image: assets.crops[0],
+      columns: 5,
+      rows: 2,
+      startX: 0.34,
+      startY: 0.785,
+      stepX: 0.044,
+      stepY: 0.054,
+      scale: 0.043,
+      phase: 5.2,
+    },
+    {
+      image: assets.crops[2],
+      columns: 5,
+      rows: 2,
+      startX: 0.555,
+      startY: 0.81,
+      stepX: 0.041,
+      stepY: 0.052,
+      scale: 0.04,
+      phase: 0.9,
+    },
+  ];
+  for (const field of cropFields) {
+    drawCropField(context, field.image, width, height, elapsed, field);
+  }
 
   const atlasSize = width * 0.27;
   drawEntityShadow(
@@ -419,14 +526,33 @@ export function FarmWorldCanvas({ world }: { world: FarmWorldSnapshot }) {
     let disposed = false;
 
     const run = async () => {
-      const [animals, environment, pet, terrainImage] = await Promise.all([
+      const [
+        animals,
+        environment,
+        pet,
+        terrainImage,
+        vistaImage,
+        ...cropImages
+      ] = await Promise.all([
         loadImage(animalAtlas),
         loadImage(environmentAtlas),
         loadImage(petAtlas),
         loadImage(terrain),
+        loadImage(vista),
+        loadImage(cropCarrot),
+        loadImage(cropLettuce),
+        loadImage(cropStrawberry),
+        loadImage(cropSunflower),
       ]);
       if (disposed) return;
-      const assets = { animals, environment, pet, terrain: terrainImage };
+      const assets = {
+        animals,
+        crops: cropImages,
+        environment,
+        pet,
+        terrain: terrainImage,
+        vista: vistaImage,
+      };
       const draw = (elapsed: number) => {
         const bounds = canvas.getBoundingClientRect();
         const width = Math.max(1, bounds.width);

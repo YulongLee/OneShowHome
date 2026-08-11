@@ -140,6 +140,11 @@ const fishNames = {
   bluegill: "蓝鳃鱼",
 } as const;
 const initialNow = Date.now();
+const getFarmDayStart = (timestamp: number) => {
+  const date = new Date(timestamp);
+  date.setHours(8, 30, 0, 0);
+  return date.getTime();
+};
 const localDate = () => new Intl.DateTimeFormat("sv-SE").format(new Date());
 const cropById = (cropId: GardenCropId | null) =>
   crops.find((crop) => crop.id === cropId);
@@ -194,6 +199,10 @@ export function GardenStage({
   const [buddyFacing, setBuddyFacing] = useState<"left" | "right">("right");
   const [buddyWalkDuration, setBuddyWalkDuration] = useState(180);
   const [now, setNow] = useState(initialNow);
+  const [farmClock] = useState(() => ({
+    gameStart: getFarmDayStart(initialNow),
+    realStart: initialNow,
+  }));
   const playerPositionRef = useRef(playerPosition);
   const buddyPositionRef = useRef(autonomousBuddyPosition);
   const playerMovementTimer = useRef<number | null>(null);
@@ -202,7 +211,7 @@ export function GardenStage({
   const rainWateringKey = useRef<string | null>(null);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 10_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
     return () => {
       window.clearInterval(timer);
       if (playerMovementTimer.current)
@@ -237,8 +246,11 @@ export function GardenStage({
       ? 1
       : (snapshot.garden.xp - currentLevelStart) /
         (snapshot.garden.nextLevelXp - currentLevelStart);
-  const clock = useMemo(() => new Date(now), [now]);
-  const world = useMemo(() => getFarmWorldSnapshot(new Date(now)), [now]);
+  const clock = useMemo(
+    () => new Date(farmClock.gameStart + (now - farmClock.realStart) * 6),
+    [farmClock, now],
+  );
+  const world = useMemo(() => getFarmWorldSnapshot(clock), [clock]);
   const routine = getBuddyRoutine(world.hour);
   const farmTime = new Intl.DateTimeFormat("zh-CN", {
     hour: "2-digit",
@@ -638,23 +650,12 @@ export function GardenStage({
       <aside aria-label="农场任务" className="farm-mission-board">
         <header>
           <ClipboardText weight="fill" />
-          <strong>任务</strong>
+          <strong>今日目标</strong>
           <span>
             {completedTasks}/{snapshot.dailyTasks.length}
           </span>
         </header>
         <section>
-          <small>主线任务</small>
-          <strong>扩建农场</strong>
-          <p>
-            收集木材 <b>18/20</b>
-          </p>
-          <p>
-            收集石材 <b>8/10</b>
-          </p>
-        </section>
-        <section>
-          <small>每日任务</small>
           {snapshot.dailyTasks.slice(0, 3).map((task) => {
             const done = task.progress >= task.target;
             return (
