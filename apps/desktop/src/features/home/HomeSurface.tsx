@@ -33,6 +33,7 @@ import {
   type ModelSettings,
 } from "../../services/model-runtime";
 import { BuddyOnboarding } from "../onboarding/BuddyOnboarding";
+import { GardenStage } from "../garden/GardenStage";
 import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
 import { HomeDialog, type HomeDialogKind } from "./HomeDialogs";
 import { DailyTaskBoard } from "./DailyTaskBoard";
@@ -279,14 +280,23 @@ export function HomeSurface() {
 
   return (
     <main className={`home-shell room-${room}${isNight ? " is-night" : ""}`}>
-      <RoomStage
-        activeAction={activeAction}
-        busyAction={busyAction}
-        objectStates={snapshot.objectStates}
-        onInteract={(hotspot) => void interact(hotspot)}
-        room={room}
-        state={state}
-      />
+      {room === "garden" ? (
+        <GardenStage
+          onBuddyLine={setBuddyLine}
+          onNotice={setNotice}
+          onSnapshot={setSnapshot}
+          snapshot={snapshot}
+        />
+      ) : (
+        <RoomStage
+          activeAction={activeAction}
+          busyAction={busyAction}
+          objectStates={snapshot.objectStates}
+          onInteract={(hotspot) => void interact(hotspot)}
+          room={room}
+          state={state}
+        />
+      )}
 
       <header className="home-titlebar">
         <div className="brand-lockup">

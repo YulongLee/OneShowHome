@@ -57,6 +57,26 @@ export type HomeObjectState = {
   lastInteractedAt: number;
 };
 
+export type GardenCropId =
+  "tomato" | "carrot" | "lettuce" | "strawberry" | "lavender" | "sunflower";
+
+export type GardenPlot = {
+  plotId: number;
+  cropId: GardenCropId | null;
+  plantedAt: number | null;
+  readyAt: number | null;
+  wateredAt: number | null;
+  waterCount: number;
+};
+
+export type GardenState = {
+  plots: GardenPlot[];
+  inventory: Array<{ cropId: GardenCropId; quantity: number }>;
+  level: number;
+  xp: number;
+  nextLevelXp: number;
+};
+
 export type DesktopSnapshot = {
   profile: BuddyProfile | null;
   state: BuddyState | null;
@@ -66,6 +86,7 @@ export type DesktopSnapshot = {
   dailyTasks: DailyTask[];
   objectStates: HomeObjectState[];
   homeProgress: { leafPoints: number; activeDays: number };
+  garden: GardenState;
   settings: { soundEnabled: boolean };
 };
 
@@ -94,6 +115,28 @@ export const createDesktopBuddy = (
 export const applyBuddyAction = (action: string) =>
   invoke<DesktopSnapshot>("apply_buddy_action", {
     action,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const plantGardenCrop = (plotId: number, cropId: GardenCropId) =>
+  invoke<DesktopSnapshot>("plant_garden_crop", {
+    plotId,
+    cropId,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const waterGardenPlot = (plotId: number) =>
+  invoke<DesktopSnapshot>("water_garden_plot", {
+    plotId,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const harvestGardenPlot = (plotId: number) =>
+  invoke<DesktopSnapshot>("harvest_garden_plot", {
+    plotId,
     nowMs: Date.now(),
     localDate: localDate(),
   });

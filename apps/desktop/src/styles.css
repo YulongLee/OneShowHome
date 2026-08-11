@@ -2065,6 +2065,427 @@ html[data-surface="main"] #root {
   left: 56%;
 }
 
+/* Living garden */
+.garden-stage .scene-shade {
+  background: linear-gradient(
+    90deg,
+    rgb(46 55 28 / 12%),
+    transparent 28%,
+    transparent 74%,
+    rgb(46 55 28 / 14%)
+  );
+}
+
+.garden-level-card,
+.garden-pantry {
+  position: absolute;
+  z-index: 5;
+  top: 70px;
+  display: flex;
+  align-items: center;
+  border: 1px solid rgb(255 255 255 / 72%);
+  color: #48583a;
+  background: rgb(255 250 233 / 86%);
+  box-shadow: 0 12px 34px rgb(56 49 30 / 16%);
+  backdrop-filter: blur(16px);
+}
+
+.garden-level-card {
+  left: 50%;
+  width: 230px;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  padding: 9px 12px;
+  border-radius: 15px;
+  transform: translateX(-50%);
+}
+
+.garden-level-card > span,
+.garden-pantry {
+  gap: 5px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.garden-level-card svg,
+.garden-pantry svg {
+  width: 14px;
+  height: 14px;
+  color: #71914f;
+}
+
+.garden-level-card small {
+  color: rgb(66 78 54 / 58%);
+  font-size: 7px;
+}
+
+.garden-xp-track {
+  order: 3;
+  width: 100%;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(95 126 69 / 13%);
+}
+
+.garden-xp-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8baa61, #d0b75c);
+  transition: width 420ms ease;
+}
+
+.garden-pantry {
+  right: 188px;
+  padding: 9px 11px;
+  border-radius: 13px;
+}
+
+.garden-pantry span {
+  font-weight: 650;
+}
+
+.garden-pantry strong {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 7px;
+  color: white;
+  background: #789456;
+  font-size: 8px;
+}
+
+.garden-plot {
+  position: absolute;
+  z-index: 3;
+  width: 112px;
+  height: 94px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+}
+
+.garden-soil {
+  position: absolute;
+  right: 13px;
+  bottom: 9px;
+  left: 13px;
+  height: 22px;
+  border: 1px solid rgb(255 236 189 / 28%);
+  border-radius: 50%;
+  background: rgb(78 54 28 / 33%);
+  box-shadow: inset 0 4px 9px rgb(47 32 17 / 22%);
+  transition: box-shadow 180ms ease;
+}
+
+.garden-plot:hover .garden-soil,
+.garden-plot:focus-visible .garden-soil,
+.garden-plot.is-selected .garden-soil {
+  box-shadow:
+    inset 0 4px 9px rgb(47 32 17 / 22%),
+    0 0 0 4px rgb(255 244 188 / 28%),
+    0 0 20px rgb(255 221 135 / 34%);
+}
+
+.garden-plot > img {
+  position: absolute;
+  z-index: 2;
+  inset: -20px -11px -5px;
+  width: calc(100% + 22px);
+  height: calc(100% + 25px);
+  object-fit: contain;
+  transform-origin: 50% 82%;
+  filter: drop-shadow(0 8px 7px rgb(48 36 20 / 24%));
+  transition:
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 300ms ease;
+}
+
+.garden-plot > img.is-sprout {
+  opacity: 0.78;
+  transform: scale(0.42);
+}
+
+.garden-plot > img.is-growing {
+  transform: scale(0.72);
+}
+
+.garden-plot > img.is-grown {
+  transform: scale(0.94);
+}
+
+.garden-plot.is-ready > img {
+  animation: crop-ready 1.8s ease-in-out infinite;
+}
+
+.garden-plant-plus {
+  position: absolute;
+  z-index: 2;
+  bottom: 10px;
+  left: 50%;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 50%;
+  color: #f7f6d7;
+  background: rgb(85 119 55 / 78%);
+  box-shadow: 0 6px 14px rgb(43 35 22 / 24%);
+  transform: translateX(-50%);
+  animation: hotspot-breathe 2.4s ease-in-out infinite;
+}
+
+.garden-plant-plus svg {
+  width: 14px;
+  height: 14px;
+}
+
+.garden-ready {
+  position: absolute;
+  z-index: 4;
+  top: 4px;
+  left: 50%;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: #fffdf1;
+  background: rgb(102 139 67 / 92%);
+  box-shadow: 0 6px 18px rgb(45 47 23 / 22%);
+  font-size: 8px;
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+
+.garden-ready svg {
+  width: 11px;
+  height: 11px;
+}
+
+.garden-buddy {
+  position: absolute;
+  z-index: 2;
+  top: 40%;
+  left: 66%;
+  width: 23%;
+  pointer-events: none;
+  filter: drop-shadow(0 13px 11px rgb(53 37 21 / 25%));
+}
+
+.garden-buddy img {
+  width: 100%;
+  animation: home-buddy-idle 4s ease-in-out infinite;
+}
+
+.garden-buddy.is-acting img {
+  animation: home-buddy-action 700ms ease-in-out infinite alternate;
+}
+
+.garden-plot-detail {
+  position: absolute;
+  z-index: 6;
+  right: 88px;
+  bottom: 114px;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 7px 9px;
+  width: 205px;
+  padding: 9px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 15px;
+  color: #48573b;
+  background: rgb(255 250 233 / 91%);
+  box-shadow: 0 14px 34px rgb(55 43 26 / 19%);
+  backdrop-filter: blur(17px);
+}
+
+.garden-plot-detail > img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.garden-plot-detail > div {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.garden-plot-detail strong {
+  font-size: 10px;
+}
+.garden-plot-detail span {
+  color: #719052;
+  font-size: 8px;
+  font-weight: 750;
+}
+.garden-plot-detail small {
+  color: rgb(68 78 56 / 58%);
+  font-size: 7px;
+}
+
+.garden-plot-detail > button {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  min-height: 29px;
+  border: 0;
+  border-radius: 9px;
+  color: white;
+  background: #729151;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.garden-plot-detail > button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.garden-plot-detail button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.seed-tray {
+  position: absolute;
+  z-index: 6;
+  bottom: 91px;
+  left: 50%;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  width: min(650px, calc(100vw - 220px));
+  padding: 8px 10px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 18px;
+  color: #48573b;
+  background: rgb(255 250 233 / 88%);
+  box-shadow: 0 16px 42px rgb(54 44 27 / 20%);
+  transform: translateX(-50%);
+  backdrop-filter: blur(18px);
+}
+
+.seed-tray-title {
+  display: grid;
+  min-width: 82px;
+  align-content: center;
+  gap: 3px;
+  padding: 0 8px 0 3px;
+  border-right: 1px solid rgb(80 100 60 / 13%);
+}
+
+.seed-tray-title span {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.seed-tray-title svg {
+  width: 14px;
+  height: 14px;
+  color: #789557;
+}
+.seed-tray-title small {
+  color: rgb(69 79 57 / 55%);
+  font-size: 7px;
+}
+
+.seed-list {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+}
+
+.seed-list > button {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  justify-items: center;
+  gap: 1px;
+  padding: 3px 3px 4px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: #4e5c41;
+  background: rgb(255 255 255 / 38%);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.seed-list > button:hover,
+.seed-list > button.is-selected {
+  border-color: rgb(100 135 70 / 36%);
+  background: rgb(224 237 206 / 76%);
+  transform: translateY(-2px);
+}
+
+.seed-list > button:disabled {
+  opacity: 0.48;
+  cursor: default;
+  filter: grayscale(0.55);
+  transform: none;
+}
+
+.seed-list img {
+  width: 38px;
+  height: 34px;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 3px rgb(56 43 24 / 15%));
+}
+
+.seed-list span {
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.seed-list small {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  color: rgb(70 81 57 / 58%);
+  font-size: 6px;
+}
+.seed-list small svg {
+  width: 8px;
+  height: 8px;
+}
+
+.room-garden .buddy-bubble {
+  top: 29%;
+  left: 69%;
+  width: min(220px, 20vw);
+}
+
+.room-garden .home-notice {
+  bottom: 174px;
+}
+
+@keyframes crop-ready {
+  0%,
+  100% {
+    transform: scale(0.94) rotate(-1deg);
+  }
+  50% {
+    transform: scale(1.01) rotate(1deg);
+  }
+}
+
 @keyframes hotspot-breathe {
   0%,
   100% {

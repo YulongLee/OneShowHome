@@ -92,6 +92,34 @@ pub struct HomeProgress {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct GardenPlot {
+    plot_id: i64,
+    crop_id: Option<String>,
+    planted_at: Option<i64>,
+    ready_at: Option<i64>,
+    watered_at: Option<i64>,
+    water_count: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GardenInventoryItem {
+    crop_id: String,
+    quantity: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GardenState {
+    plots: Vec<GardenPlot>,
+    inventory: Vec<GardenInventoryItem>,
+    level: i64,
+    xp: i64,
+    next_level_xp: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DesktopSnapshot {
     profile: Option<BuddyProfile>,
     state: Option<BuddyState>,
@@ -101,6 +129,7 @@ pub struct DesktopSnapshot {
     daily_tasks: Vec<DailyTask>,
     object_states: Vec<HomeObjectState>,
     home_progress: HomeProgress,
+    garden: GardenState,
     settings: DesktopSettings,
 }
 
@@ -178,7 +207,25 @@ impl DesktopStore {
                    level INTEGER NOT NULL DEFAULT 1 CHECK (level BETWEEN 1 AND 5),
                    last_interacted_at INTEGER NOT NULL
                  );
-                 PRAGMA user_version=2;",
+                 CREATE TABLE IF NOT EXISTS garden_plots (
+                   plot_id INTEGER PRIMARY KEY CHECK (plot_id BETWEEN 1 AND 4),
+                   crop_id TEXT,
+                   planted_at INTEGER,
+                   ready_at INTEGER,
+                   watered_at INTEGER,
+                   water_count INTEGER NOT NULL DEFAULT 0
+                 );
+                 CREATE TABLE IF NOT EXISTS garden_profile (
+                   id INTEGER PRIMARY KEY CHECK (id = 1),
+                   xp INTEGER NOT NULL DEFAULT 0 CHECK (xp >= 0)
+                 );
+                 CREATE TABLE IF NOT EXISTS garden_inventory (
+                   crop_id TEXT PRIMARY KEY,
+                   quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0)
+                 );
+                 INSERT OR IGNORE INTO garden_profile (id, xp) VALUES (1, 0);
+                 INSERT OR IGNORE INTO garden_plots (plot_id) VALUES (1), (2), (3), (4);
+                 PRAGMA user_version=3;",
             )
             .map_err(|error| error.to_string())?;
         Ok(Self {
@@ -198,7 +245,7 @@ impl DesktopStore {
             .lock()
             .map_err(|_| "本地数据暂时不可用".to_string())?;
         tick_state(&mut connection, now_ms, local_hour)?;
-        ensure_daily_tasks(&connection, local_date)?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
         snapshot_from_connection(&connection)
     }
 
@@ -333,7 +380,7 @@ impl DesktopStore {
             .connection
             .lock()
             .map_err(|_| "本地数据暂时不可用".to_string())?;
-        ensure_daily_tasks(&connection, local_date)?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
         let current_energy: i64 = connection
             .query_row("SELECT energy FROM buddy_state WHERE id=1", [], |row| {
                 row.get(0)
@@ -372,6 +419,161 @@ impl DesktopStore {
                 params![local_date, action, now_ms],
             )
             .map_err(|error| error.to_string())?;
+        snapshot_from_connection(&connection)
+    }
+
+    pub fn plant_garden_crop(
+        &self,
+        plot_id: i64,
+        crop_id: &str,
+        now_ms: i64,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
+        let crop = crop_info(crop_id).ok_or_else(|| "还没有这种种子".to_string())?;
+        if !(1..=4).contains(&plot_id) {
+            return Err("请选择一块花圃".to_string());
+        }
+        let connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
+        let xp: i64 = connection
+            .query_row("SELECT xp FROM garden_profile WHERE id=1", [], |row| {
+                row.get(0)
+            })
+            .map_err(|error| error.to_string())?;
+        if garden_level(xp) < crop.unlock_level {
+            return Err(format!(
+                "园艺 Lv.{} 才能种下{}",
+                crop.unlock_level, crop.name
+            ));
+        }
+        let occupied: Option<String> = connection
+            .query_row(
+                "SELECT crop_id FROM garden_plots WHERE plot_id=?1",
+                [plot_id],
+                |row| row.get(0),
+            )
+            .map_err(|error| error.to_string())?;
+        if occupied.is_some() {
+            return Err("这块花圃已经住着一株植物了".to_string());
+        }
+        let ready_at = now_ms + crop.duration_ms;
+        connection
+            .execute(
+                "UPDATE garden_plots SET crop_id=?1, planted_at=?2, ready_at=?3, watered_at=NULL, water_count=0 WHERE plot_id=?4",
+                params![crop_id, now_ms, ready_at, plot_id],
+            )
+            .map_err(|error| error.to_string())?;
+        record_garden_action(
+            &connection,
+            "plant",
+            &format!("在花圃种下了{}", crop.name),
+            now_ms,
+            local_date,
+        )?;
+        snapshot_from_connection(&connection)
+    }
+
+    pub fn water_garden_plot(
+        &self,
+        plot_id: i64,
+        now_ms: i64,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
+        let connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
+        let (crop_id, ready_at, watered_at, water_count): (Option<String>, Option<i64>, Option<i64>, i64) = connection
+            .query_row(
+                "SELECT crop_id, ready_at, watered_at, water_count FROM garden_plots WHERE plot_id=?1",
+                [plot_id],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .map_err(|_| "没有找到这块花圃".to_string())?;
+        let crop_id = crop_id.ok_or_else(|| "先种下一颗种子吧".to_string())?;
+        let ready_at = ready_at.unwrap_or(now_ms);
+        if ready_at <= now_ms {
+            return Err("植物已经成熟，可以直接收获了".to_string());
+        }
+        if water_count >= 2 {
+            return Err("这株植物今天已经喝饱水了".to_string());
+        }
+        if watered_at.is_some_and(|last| now_ms - last < 5 * 60 * 1000) {
+            return Err("刚刚浇过水，让土壤先吸收一会儿吧".to_string());
+        }
+        let shortened = ((ready_at - now_ms) * 15 / 100).max(60_000);
+        let next_ready_at = (ready_at - shortened).max(now_ms + 60_000);
+        connection
+            .execute(
+                "UPDATE garden_plots SET ready_at=?1, watered_at=?2, water_count=water_count+1 WHERE plot_id=?3",
+                params![next_ready_at, now_ms, plot_id],
+            )
+            .map_err(|error| error.to_string())?;
+        let crop_name = crop_info(&crop_id).map(|crop| crop.name).unwrap_or("植物");
+        record_garden_action(
+            &connection,
+            "water",
+            &format!("给{}浇了水，成熟时间提前了", crop_name),
+            now_ms,
+            local_date,
+        )?;
+        snapshot_from_connection(&connection)
+    }
+
+    pub fn harvest_garden_plot(
+        &self,
+        plot_id: i64,
+        now_ms: i64,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
+        let mut connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
+        let (crop_id, ready_at): (Option<String>, Option<i64>) = connection
+            .query_row(
+                "SELECT crop_id, ready_at FROM garden_plots WHERE plot_id=?1",
+                [plot_id],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .map_err(|_| "没有找到这块花圃".to_string())?;
+        let crop_id = crop_id.ok_or_else(|| "这块花圃还没有可以收获的植物".to_string())?;
+        if ready_at.unwrap_or(i64::MAX) > now_ms {
+            return Err("植物还在慢慢长大，再等一会儿吧".to_string());
+        }
+        let crop = crop_info(&crop_id).ok_or_else(|| "没有找到这种作物".to_string())?;
+        let transaction = connection
+            .transaction()
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute(
+                "INSERT INTO garden_inventory (crop_id, quantity) VALUES (?1, 1)
+                 ON CONFLICT(crop_id) DO UPDATE SET quantity=quantity+1",
+                [&crop_id],
+            )
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute("UPDATE garden_profile SET xp=xp+?1 WHERE id=1", [crop.xp])
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute(
+                "UPDATE garden_plots SET crop_id=NULL, planted_at=NULL, ready_at=NULL, watered_at=NULL, water_count=0 WHERE plot_id=?1",
+                [plot_id],
+            )
+            .map_err(|error| error.to_string())?;
+        record_garden_action(
+            &transaction,
+            "harvest",
+            &format!("收获了一份新鲜{}", crop.name),
+            now_ms,
+            local_date,
+        )?;
+        transaction.commit().map_err(|error| error.to_string())?;
         snapshot_from_connection(&connection)
     }
 
@@ -609,6 +811,9 @@ impl DesktopStore {
             .transaction()
             .map_err(|error| error.to_string())?;
         for table in [
+            "garden_inventory",
+            "garden_plots",
+            "garden_profile",
             "gallery_photos",
             "home_object_states",
             "daily_tasks",
@@ -623,10 +828,117 @@ impl DesktopStore {
                 .execute(&format!("DELETE FROM {table}"), [])
                 .map_err(|error| error.to_string())?;
         }
+        transaction
+            .execute("INSERT INTO garden_profile (id, xp) VALUES (1, 0)", [])
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute(
+                "INSERT INTO garden_plots (plot_id) VALUES (1), (2), (3), (4)",
+                [],
+            )
+            .map_err(|error| error.to_string())?;
         transaction.commit().map_err(|error| error.to_string())?;
         let _ = fs::remove_dir_all(self.data_dir.join("gallery"));
         Ok(())
     }
+}
+
+struct CropInfo {
+    name: &'static str,
+    duration_ms: i64,
+    unlock_level: i64,
+    xp: i64,
+}
+
+fn crop_info(crop_id: &str) -> Option<CropInfo> {
+    let minutes = 60_000;
+    match crop_id {
+        "tomato" => Some(CropInfo {
+            name: "番茄",
+            duration_ms: 30 * minutes,
+            unlock_level: 1,
+            xp: 12,
+        }),
+        "carrot" => Some(CropInfo {
+            name: "胡萝卜",
+            duration_ms: 45 * minutes,
+            unlock_level: 1,
+            xp: 14,
+        }),
+        "lettuce" => Some(CropInfo {
+            name: "生菜",
+            duration_ms: 60 * minutes,
+            unlock_level: 1,
+            xp: 16,
+        }),
+        "strawberry" => Some(CropInfo {
+            name: "草莓",
+            duration_ms: 90 * minutes,
+            unlock_level: 2,
+            xp: 20,
+        }),
+        "lavender" => Some(CropInfo {
+            name: "薰衣草",
+            duration_ms: 120 * minutes,
+            unlock_level: 2,
+            xp: 24,
+        }),
+        "sunflower" => Some(CropInfo {
+            name: "向日葵",
+            duration_ms: 180 * minutes,
+            unlock_level: 3,
+            xp: 30,
+        }),
+        _ => None,
+    }
+}
+
+fn garden_level(xp: i64) -> i64 {
+    match xp {
+        0..=59 => 1,
+        60..=159 => 2,
+        160..=319 => 3,
+        _ => 4,
+    }
+}
+
+fn next_garden_level_xp(level: i64) -> i64 {
+    match level {
+        1 => 60,
+        2 => 160,
+        3 => 320,
+        _ => 320,
+    }
+}
+
+fn record_garden_action(
+    connection: &Connection,
+    action: &str,
+    detail: &str,
+    now_ms: i64,
+    local_date: &str,
+) -> Result<(), String> {
+    connection
+        .execute(
+            "INSERT INTO domain_events (event_type, detail, occurred_at) VALUES ('garden', ?1, ?2)",
+            params![detail, now_ms],
+        )
+        .map_err(|error| error.to_string())?;
+    connection
+        .execute(
+            "UPDATE buddy_state SET mood='happy', energy=MAX(0, energy-2), location='garden', activity='gardening', updated_at=?1 WHERE id=1",
+            [now_ms],
+        )
+        .map_err(|error| error.to_string())?;
+    connection
+        .execute(
+            "UPDATE daily_tasks SET progress=MIN(target, progress+1),
+             completed_at=CASE WHEN progress+1>=target THEN COALESCE(completed_at, ?3) ELSE completed_at END
+             WHERE local_date=?1 AND action=?2",
+            params![local_date, action, now_ms],
+        )
+        .map_err(|error| error.to_string())?;
+    Ok(())
 }
 
 fn tick_state(connection: &mut Connection, now_ms: i64, local_hour: u8) -> Result<(), String> {
@@ -715,6 +1027,7 @@ fn snapshot_from_connection(connection: &Connection) -> Result<DesktopSnapshot, 
     let gallery = query_gallery(connection)?;
     let daily_tasks = query_daily_tasks(connection)?;
     let object_states = query_object_states(connection)?;
+    let garden = query_garden_state(connection)?;
     let leaf_points = connection
         .query_row(
             "SELECT COALESCE(SUM(reward), 0) FROM daily_tasks WHERE claimed=1",
@@ -751,11 +1064,16 @@ fn snapshot_from_connection(connection: &Connection) -> Result<DesktopSnapshot, 
             leaf_points,
             active_days,
         },
+        garden,
         settings: DesktopSettings { sound_enabled },
     })
 }
 
-fn ensure_daily_tasks(connection: &Connection, local_date: &str) -> Result<(), String> {
+fn ensure_daily_tasks(
+    connection: &Connection,
+    local_date: &str,
+    now_ms: i64,
+) -> Result<(), String> {
     if local_date.len() != 10
         || !local_date
             .chars()
@@ -763,7 +1081,17 @@ fn ensure_daily_tasks(connection: &Connection, local_date: &str) -> Result<(), S
     {
         return Err("本地日期格式不正确".to_string());
     }
-    let templates = [
+    let existing_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM daily_tasks WHERE local_date=?1",
+            [local_date],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
+    if existing_count > 0 {
+        return Ok(());
+    }
+    let home_templates = [
         ("read", "午后阅读", "在客厅陪 Buddy 读一次书", 1, 12),
         ("rest", "慢下来", "在沙发上休息一次", 1, 10),
         ("fireplace", "壁炉时光", "和 Buddy 在壁炉边取暖", 1, 10),
@@ -773,14 +1101,11 @@ fn ensure_daily_tasks(connection: &Connection, local_date: &str) -> Result<(), S
         ("sleep", "好好休息", "让 Buddy 回卧室睡一觉", 1, 12),
         ("write", "写下心情", "在书桌前写一次心情", 1, 12),
         ("tidy", "整理房间", "整理一次卧室衣柜", 1, 10),
-        ("water", "花儿喝水", "给花圃浇一次水", 1, 12),
-        ("harvest", "小小收获", "从菜园收获一次蔬菜", 1, 15),
-        ("greenhouse", "照料幼苗", "去温室照料一次幼苗", 1, 12),
     ];
     let seed = local_date.bytes().map(usize::from).sum::<usize>();
-    for step in [0, 4, 8] {
+    for step in [0, 4] {
         let (action, title, description, target, reward) =
-            templates[(seed + step) % templates.len()];
+            home_templates[(seed + step) % home_templates.len()];
         connection
             .execute(
                 "INSERT OR IGNORE INTO daily_tasks
@@ -798,7 +1123,92 @@ fn ensure_daily_tasks(connection: &Connection, local_date: &str) -> Result<(), S
             )
             .map_err(|error| error.to_string())?;
     }
+    let ready_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM garden_plots WHERE crop_id IS NOT NULL AND ready_at<=?1",
+            [now_ms],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
+    let empty_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM garden_plots WHERE crop_id IS NULL",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
+    let (action, title, description, reward) = if ready_count > 0 {
+        ("harvest", "小小收获", "从菜园收获一份成熟作物", 15)
+    } else if empty_count > 0 {
+        ("plant", "播下一颗种子", "在空花圃种下一种喜欢的作物", 12)
+    } else {
+        ("water", "花儿喝水", "给生长中的作物浇一次水", 12)
+    };
+    connection
+        .execute(
+            "INSERT OR IGNORE INTO daily_tasks
+             (id, local_date, action, title, description, target, progress, reward, claimed)
+             VALUES (?1, ?2, ?3, ?4, ?5, 1, 0, ?6, 0)",
+            params![
+                format!("{local_date}-garden"),
+                local_date,
+                action,
+                title,
+                description,
+                reward
+            ],
+        )
+        .map_err(|error| error.to_string())?;
     Ok(())
+}
+
+fn query_garden_state(connection: &Connection) -> Result<GardenState, String> {
+    let mut plot_statement = connection
+        .prepare(
+            "SELECT plot_id, crop_id, planted_at, ready_at, watered_at, water_count
+             FROM garden_plots ORDER BY plot_id ASC",
+        )
+        .map_err(|error| error.to_string())?;
+    let plots = plot_statement
+        .query_map([], |row| {
+            Ok(GardenPlot {
+                plot_id: row.get(0)?,
+                crop_id: row.get(1)?,
+                planted_at: row.get(2)?,
+                ready_at: row.get(3)?,
+                watered_at: row.get(4)?,
+                water_count: row.get(5)?,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    let mut inventory_statement = connection
+        .prepare("SELECT crop_id, quantity FROM garden_inventory WHERE quantity>0 ORDER BY crop_id")
+        .map_err(|error| error.to_string())?;
+    let inventory = inventory_statement
+        .query_map([], |row| {
+            Ok(GardenInventoryItem {
+                crop_id: row.get(0)?,
+                quantity: row.get(1)?,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    let xp = connection
+        .query_row("SELECT xp FROM garden_profile WHERE id=1", [], |row| {
+            row.get(0)
+        })
+        .map_err(|error| error.to_string())?;
+    let level = garden_level(xp);
+    Ok(GardenState {
+        plots,
+        inventory,
+        level,
+        xp,
+        next_level_xp: next_garden_level_xp(level),
+    })
 }
 
 fn query_daily_tasks(connection: &Connection) -> Result<Vec<DailyTask>, String> {
@@ -960,6 +1370,39 @@ mod tests {
         let claimed = store.claim_task(&task_id).unwrap();
         assert!(claimed.daily_tasks[0].claimed);
         assert!(claimed.home_progress.leaf_points > 0);
+        let _ = std::fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn garden_crops_grow_offline_and_harvest_into_inventory() {
+        let directory =
+            std::env::temp_dir().join(format!("oneshow-home-garden-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        let store = DesktopStore::open(directory.clone()).unwrap();
+        store.create_buddy("Milo", "milo", "warm", 1_000).unwrap();
+
+        let planted = store
+            .plant_garden_crop(1, "tomato", 1_000, "2026-08-11")
+            .unwrap();
+        let planted_plot = &planted.garden.plots[0];
+        assert_eq!(planted_plot.crop_id.as_deref(), Some("tomato"));
+        assert!(planted
+            .daily_tasks
+            .iter()
+            .any(|task| task.action == "plant" && task.progress == 1));
+
+        let original_ready_at = planted_plot.ready_at.unwrap();
+        let watered = store.water_garden_plot(1, 10_000, "2026-08-11").unwrap();
+        assert!(watered.garden.plots[0].ready_at.unwrap() < original_ready_at);
+        assert!(store.harvest_garden_plot(1, 20_000, "2026-08-11").is_err());
+
+        let harvested = store
+            .harvest_garden_plot(1, 2_000_000, "2026-08-11")
+            .unwrap();
+        assert!(harvested.garden.plots[0].crop_id.is_none());
+        assert_eq!(harvested.garden.inventory[0].crop_id, "tomato");
+        assert_eq!(harvested.garden.inventory[0].quantity, 1);
+        assert_eq!(harvested.garden.xp, 12);
         let _ = std::fs::remove_dir_all(directory);
     }
 }

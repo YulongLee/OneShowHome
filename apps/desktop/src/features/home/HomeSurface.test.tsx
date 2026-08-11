@@ -70,6 +70,20 @@ const snapshot = {
   dailyTasks: [],
   objectStates: [],
   homeProgress: { leafPoints: 0, activeDays: 0 },
+  garden: {
+    plots: [1, 2, 3, 4].map((plotId) => ({
+      plotId,
+      cropId: null,
+      plantedAt: null,
+      readyAt: null,
+      wateredAt: null,
+      waterCount: 0,
+    })),
+    inventory: [],
+    level: 1,
+    xp: 0,
+    nextLevelXp: 60,
+  },
   settings: { soundEnabled: true },
 };
 

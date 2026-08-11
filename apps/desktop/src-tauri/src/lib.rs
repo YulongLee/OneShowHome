@@ -114,6 +114,37 @@ fn apply_buddy_action(
 }
 
 #[tauri::command]
+fn plant_garden_crop(
+    store: State<'_, DesktopStore>,
+    plot_id: i64,
+    crop_id: String,
+    now_ms: i64,
+    local_date: String,
+) -> Result<DesktopSnapshot, String> {
+    store.plant_garden_crop(plot_id, &crop_id, now_ms, &local_date)
+}
+
+#[tauri::command]
+fn water_garden_plot(
+    store: State<'_, DesktopStore>,
+    plot_id: i64,
+    now_ms: i64,
+    local_date: String,
+) -> Result<DesktopSnapshot, String> {
+    store.water_garden_plot(plot_id, now_ms, &local_date)
+}
+
+#[tauri::command]
+fn harvest_garden_plot(
+    store: State<'_, DesktopStore>,
+    plot_id: i64,
+    now_ms: i64,
+    local_date: String,
+) -> Result<DesktopSnapshot, String> {
+    store.harvest_garden_plot(plot_id, now_ms, &local_date)
+}
+
+#[tauri::command]
 fn claim_daily_task(
     store: State<'_, DesktopStore>,
     task_id: String,
@@ -302,6 +333,9 @@ pub fn run() {
             load_desktop_snapshot,
             create_desktop_buddy,
             apply_buddy_action,
+            plant_garden_crop,
+            water_garden_plot,
+            harvest_garden_plot,
             claim_daily_task,
             change_buddy_room,
             add_desktop_memory,

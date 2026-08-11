@@ -32,6 +32,13 @@ describe("BuddyOnboarding", () => {
       dailyTasks: [],
       objectStates: [],
       homeProgress: { leafPoints: 0, activeDays: 0 },
+      garden: {
+        plots: [],
+        inventory: [],
+        level: 1,
+        xp: 0,
+        nextLevelXp: 60,
+      },
       settings: { soundEnabled: true },
     };
     vi.mocked(createDesktopBuddy).mockResolvedValue(snapshot);
