@@ -2,6 +2,7 @@ import {
   Axe,
   Backpack,
   Basket,
+  Bird,
   BookOpenText,
   CalendarDots,
   Check,
@@ -184,6 +185,7 @@ export function GardenStage({
     top: 47,
   });
   const [walkMarker, setWalkMarker] = useState<FarmPoint | null>(null);
+  const [playerRoute, setPlayerRoute] = useState<FarmPoint[]>([]);
   const [isPlayerMoving, setIsPlayerMoving] = useState(false);
   const [playerFacing, setPlayerFacing] = useState<"left" | "right">("right");
   const [playerWalkDuration, setPlayerWalkDuration] = useState(180);
@@ -267,14 +269,15 @@ export function GardenStage({
       window.clearTimeout(playerMovementTimer.current);
     setPlayerPose("idle");
     setWalkMarker(path.at(-1) ?? target);
+    setPlayerRoute(path);
     setIsPlayerMoving(true);
     for (const point of path.slice(1)) {
       const previous = playerPositionRef.current;
       const duration = Math.max(
-        90,
+        160,
         Math.min(
-          180,
-          Math.hypot(point.left - previous.left, point.top - previous.top) * 38,
+          1_200,
+          Math.hypot(point.left - previous.left, point.top - previous.top) * 75,
         ),
       );
       setPlayerFacing(point.left < previous.left ? "left" : "right");
@@ -287,6 +290,7 @@ export function GardenStage({
     }
     setIsPlayerMoving(false);
     setWalkMarker(null);
+    setPlayerRoute([]);
     playerMovementTimer.current = null;
   };
 
@@ -303,11 +307,11 @@ export function GardenStage({
           if (cancelled) return;
           const previous = buddyPositionRef.current;
           const duration = Math.max(
-            100,
+            170,
             Math.min(
-              190,
+              1_250,
               Math.hypot(point.left - previous.left, point.top - previous.top) *
-                40,
+                78,
             ),
           );
           setBuddyFacing(point.left < previous.left ? "left" : "right");
@@ -580,6 +584,33 @@ export function GardenStage({
           ))}
         </div>
       ) : null}
+      <div aria-hidden="true" className="farm-ambient-layer">
+        <div className="farm-cloud-shadows">
+          <i />
+          <i />
+        </div>
+        <div className="farm-chimney-smoke">
+          {Array.from({ length: 4 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </div>
+        <div className="farm-river-current">
+          {Array.from({ length: 8 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </div>
+        <div className="farm-leaf-motes">
+          {Array.from({ length: 12 }, (_, index) => (
+            <i key={index} />
+          ))}
+        </div>
+        {world.weather === "sunny" && world.phase !== "night" ? (
+          <div className="farm-bird-flight">
+            <Bird weight="fill" />
+            <Bird weight="fill" />
+          </div>
+        ) : null}
+      </div>
 
       <header className="farm-game-hud">
         <section aria-label="角色状态" className="farm-player-card">
@@ -695,13 +726,35 @@ export function GardenStage({
         onPointerDown={moveOnMap}
         type="button"
       />
+      {playerRoute.length > 1 ? (
+        <svg
+          aria-hidden="true"
+          className="farm-route-preview"
+          preserveAspectRatio="none"
+          viewBox="0 0 100 100"
+        >
+          <polyline
+            points={playerRoute
+              .map((point) => `${point.left},${point.top}`)
+              .join(" ")}
+          />
+          {playerRoute.slice(1).map((point, index) => (
+            <circle
+              cx={point.left}
+              cy={point.top}
+              key={`${point.left}-${point.top}-${index}`}
+              r="0.55"
+            />
+          ))}
+        </svg>
+      ) : null}
       {walkMarker ? (
         <span
           aria-hidden="true"
           className="farm-walk-marker"
           style={{
             left: `${walkMarker.left}%`,
-            top: `${walkMarker.top + 15}%`,
+            top: `${walkMarker.top}%`,
           }}
         >
           <Footprints weight="fill" />

@@ -33,11 +33,12 @@ describe("Farm World engine", () => {
 
     expect(path.length).toBeGreaterThan(2);
     expect(path.every(isFarmPointWalkable)).toBe(true);
+    expect(path).not.toContainEqual({ left: 88, top: 77 });
   });
 
-  it("blocks keyboard movement into a building collider", () => {
-    const start = { left: 43, top: 40 };
-    const next = moveFarmPoint(start, -4, 0);
+  it("keeps keyboard movement on the authored road network", () => {
+    const start = { left: 42, top: 44 };
+    const next = moveFarmPoint(start, -10, -4);
 
     expect(next).toEqual(start);
   });

@@ -107,6 +107,9 @@ describe("GardenStage game movement", () => {
     const player = container.querySelector<HTMLElement>(".farm-player");
     expect(player).toHaveClass("is-moving");
     expect(container.querySelector(".farm-player-walk-cycle")).not.toBeNull();
+    expect(
+      container.querySelector(".farm-route-preview polyline"),
+    ).not.toBeNull();
     expect(onBuddyLine).toHaveBeenCalledWith(
       "你先过去，我会在农场里做自己的事情。",
     );
@@ -114,6 +117,7 @@ describe("GardenStage game movement", () => {
     await act(async () => vi.advanceTimersByTimeAsync(10_000));
     expect(player).not.toHaveClass("is-moving");
     expect(container.querySelector(".farm-player-walk-cycle")).toBeNull();
+    expect(container.querySelector(".farm-route-preview")).toBeNull();
     expect(
       isFarmPointWalkable({
         left: Number.parseFloat(player?.style.left ?? "0"),

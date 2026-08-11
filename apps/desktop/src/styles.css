@@ -3242,6 +3242,251 @@ html[data-surface="main"] #root {
   animation: farm-rain-fall 0.8s linear infinite;
 }
 
+.farm-ambient-layer {
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.farm-cloud-shadows i {
+  position: absolute;
+  top: 12%;
+  left: -28%;
+  width: 25%;
+  height: 18%;
+  border-radius: 50%;
+  background: rgb(42 76 70 / 9%);
+  filter: blur(18px);
+  animation: farm-cloud-drift 32s linear infinite;
+}
+
+.farm-cloud-shadows i + i {
+  top: 46%;
+  animation-delay: -17s;
+  animation-duration: 39s;
+}
+
+.farm-chimney-smoke {
+  position: absolute;
+  top: 13%;
+  left: 27.5%;
+  width: 5%;
+  height: 17%;
+}
+
+.farm-chimney-smoke i {
+  position: absolute;
+  bottom: 0;
+  left: 40%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(244 241 223 / 68%);
+  filter: blur(1px);
+  opacity: 0;
+  animation: farm-smoke-rise 4.8s ease-out infinite;
+}
+
+.farm-chimney-smoke i:nth-child(2) {
+  animation-delay: 1.2s;
+}
+
+.farm-chimney-smoke i:nth-child(3) {
+  animation-delay: 2.4s;
+}
+
+.farm-chimney-smoke i:nth-child(4) {
+  animation-delay: 3.6s;
+}
+
+.farm-river-current {
+  position: absolute;
+  top: 25%;
+  right: 0;
+  width: 16%;
+  height: 68%;
+  transform: rotate(8deg);
+}
+
+.farm-river-current i {
+  position: absolute;
+  right: -12%;
+  width: 31px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgb(221 251 255 / 58%);
+  opacity: 0;
+  animation: farm-water-flow 4.4s ease-in-out infinite;
+}
+
+.farm-river-current i:nth-child(1) {
+  top: 5%;
+}
+
+.farm-river-current i:nth-child(2) {
+  top: 18%;
+  animation-delay: -0.8s;
+}
+
+.farm-river-current i:nth-child(3) {
+  top: 31%;
+  animation-delay: -1.6s;
+}
+
+.farm-river-current i:nth-child(4) {
+  top: 44%;
+  animation-delay: -2.4s;
+}
+
+.farm-river-current i:nth-child(5) {
+  top: 57%;
+  animation-delay: -3.2s;
+}
+
+.farm-river-current i:nth-child(6) {
+  top: 70%;
+  animation-delay: -1.1s;
+}
+
+.farm-river-current i:nth-child(7) {
+  top: 83%;
+  animation-delay: -2.1s;
+}
+
+.farm-river-current i:nth-child(8) {
+  top: 94%;
+  animation-delay: -3.7s;
+}
+
+.farm-leaf-motes i {
+  position: absolute;
+  top: 20%;
+  left: 5%;
+  width: 5px;
+  height: 3px;
+  border-radius: 90% 10% 90% 10%;
+  background: #8cac57;
+  opacity: 0;
+  animation: farm-leaf-drift 8s ease-in-out infinite;
+}
+
+.farm-leaf-motes i:nth-child(2) {
+  top: 30%;
+  left: 11%;
+  animation-delay: -2s;
+}
+
+.farm-leaf-motes i:nth-child(3) {
+  top: 17%;
+  left: 40%;
+  animation-delay: -5s;
+}
+
+.farm-leaf-motes i:nth-child(4) {
+  top: 26%;
+  left: 47%;
+  animation-delay: -3s;
+}
+
+.farm-leaf-motes i:nth-child(5) {
+  top: 18%;
+  left: 72%;
+  animation-delay: -6s;
+}
+
+.farm-leaf-motes i:nth-child(6) {
+  top: 29%;
+  left: 78%;
+  animation-delay: -1s;
+}
+
+.farm-leaf-motes i:nth-child(7) {
+  top: 48%;
+  left: 16%;
+  animation-delay: -4s;
+}
+
+.farm-leaf-motes i:nth-child(8) {
+  top: 43%;
+  left: 35%;
+  animation-delay: -7s;
+}
+
+.farm-leaf-motes i:nth-child(9) {
+  top: 54%;
+  left: 88%;
+  animation-delay: -2.5s;
+}
+
+.farm-leaf-motes i:nth-child(10) {
+  top: 72%;
+  left: 7%;
+  animation-delay: -6.5s;
+}
+
+.farm-leaf-motes i:nth-child(11) {
+  top: 68%;
+  left: 91%;
+  animation-delay: -3.5s;
+}
+
+.farm-leaf-motes i:nth-child(12) {
+  top: 83%;
+  left: 45%;
+  animation-delay: -5.5s;
+}
+
+.farm-bird-flight {
+  position: absolute;
+  top: 9%;
+  left: -8%;
+  display: flex;
+  gap: 8px;
+  color: rgb(61 72 51 / 54%);
+  animation: farm-birds-cross 26s linear infinite;
+}
+
+.farm-bird-flight svg {
+  width: 14px;
+  height: 14px;
+}
+
+.farm-bird-flight svg + svg {
+  margin-top: 7px;
+  transform: scale(0.72);
+}
+
+.farm-route-preview {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.farm-route-preview polyline {
+  fill: none;
+  stroke: rgb(255 245 190 / 80%);
+  stroke-width: 0.42;
+  stroke-dasharray: 1.2 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgb(72 61 31 / 60%));
+  animation: farm-route-dash 1.1s linear infinite;
+  vector-effect: non-scaling-stroke;
+}
+
+.farm-route-preview circle {
+  fill: rgb(255 248 206 / 88%);
+  stroke: rgb(97 119 59 / 76%);
+  stroke-width: 0.18;
+  vector-effect: non-scaling-stroke;
+}
+
 .farm-game-hud {
   position: absolute;
   z-index: 12;
@@ -3617,6 +3862,16 @@ html[data-surface="main"] #root {
   inset: -35% -20% -18%;
   width: 140%;
   height: 153%;
+  transform-origin: center bottom;
+  animation: farm-crop-sway 3.8s ease-in-out infinite alternate;
+}
+
+.room-garden .farm-plot:nth-of-type(even) > img {
+  animation-delay: -1.6s;
+}
+
+.room-garden .farm-plot.is-ready > img {
+  animation: crop-ready 1.8s ease-in-out infinite;
 }
 
 .room-garden .farm-plant-plus {
@@ -3669,6 +3924,22 @@ html[data-surface="main"] #root {
 .room-garden .farm-player {
   z-index: 10;
   filter: drop-shadow(0 5px 3px rgb(37 45 25 / 26%));
+}
+
+.room-garden .animal-hotspot::after {
+  position: absolute;
+  right: 17%;
+  bottom: 13%;
+  width: 5px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgb(255 248 215 / 64%);
+  box-shadow:
+    -7px 2px 0 rgb(255 248 215 / 32%),
+    6px 1px 0 rgb(255 248 215 / 42%);
+  content: "";
+  opacity: 0;
+  animation: farm-animal-dust 5.2s ease-in-out infinite;
 }
 
 .room-garden .farm-player img,
@@ -4067,6 +4338,102 @@ html[data-surface="main"] #root {
   }
   to {
     translate: 28px 780%;
+  }
+}
+
+@keyframes farm-cloud-drift {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 540% 18%;
+  }
+}
+
+@keyframes farm-smoke-rise {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    scale: 0.65;
+  }
+  25% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+    translate: 13px -58px;
+    scale: 2.2;
+  }
+}
+
+@keyframes farm-water-flow {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  35% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+    translate: -150px 28px;
+  }
+}
+
+@keyframes farm-leaf-drift {
+  0% {
+    opacity: 0;
+    translate: -8px -4px;
+    rotate: 0deg;
+  }
+  25%,
+  70% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0;
+    translate: 54px 22px;
+    rotate: 320deg;
+  }
+}
+
+@keyframes farm-birds-cross {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 1250px 55px;
+  }
+}
+
+@keyframes farm-route-dash {
+  to {
+    stroke-dashoffset: -2.3;
+  }
+}
+
+@keyframes farm-crop-sway {
+  from {
+    transform: rotate(-0.8deg) translateY(0);
+  }
+  to {
+    transform: rotate(1deg) translateY(-2px);
+  }
+}
+
+@keyframes farm-animal-dust {
+  0%,
+  72%,
+  100% {
+    opacity: 0;
+    translate: 0 2px;
+  }
+  78% {
+    opacity: 0.7;
+  }
+  92% {
+    opacity: 0;
+    translate: 8px -5px;
   }
 }
 
