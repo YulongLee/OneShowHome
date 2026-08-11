@@ -1,14 +1,29 @@
 import {
+  Axe,
+  Backpack,
   Basket,
-  Cow,
+  BookOpenText,
+  CalendarDots,
+  Check,
+  ClipboardText,
+  Coin,
   Drop,
   Fish,
   Footprints,
+  GearSix,
+  Hammer,
   Heart,
   Leaf,
   LockSimple,
+  MapTrifold,
+  Package,
   Plant,
+  Shovel,
   Sparkle,
+  Sun,
+  TShirt,
+  TreeEvergreen,
+  X,
 } from "@phosphor-icons/react";
 import {
   useEffect,
@@ -18,17 +33,17 @@ import {
   type CSSProperties,
   type PointerEvent,
 } from "react";
-import animalTrio from "../../assets/farm/animal-trio.png";
 import buddyFishing from "../../assets/farm/buddy-fishing.png";
 import buddyStanding from "../../assets/farm/buddy-standing.png";
 import buddyWalkCycle from "../../assets/farm/buddy-walk-cycle.png";
-import farmScene from "../../assets/farm/farm-scene.png";
+import farmWorld from "../../assets/farm/farm-world-v2.png";
 import cropCarrot from "../../assets/garden/crop-carrot.png";
 import cropLavender from "../../assets/garden/crop-lavender.png";
 import cropLettuce from "../../assets/garden/crop-lettuce.png";
 import cropStrawberry from "../../assets/garden/crop-strawberry.png";
 import cropSunflower from "../../assets/garden/crop-sunflower.png";
 import cropTomato from "../../assets/garden/crop-tomato.png";
+import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import buddyGardening from "../../assets/house/buddy-gardening.png";
 import {
   feedFarmAnimal,
@@ -44,6 +59,8 @@ import {
 type FarmMode = "plant" | "fish" | "animal";
 type BuddyPose = "idle" | "gardening" | "fishing";
 type FarmPoint = { left: number; top: number };
+type FarmTool = "water" | "hoe" | "axe" | "basket" | "seed" | "feed";
+type FarmPanel = "inventory" | "map" | "diary" | "wardrobe" | "settings";
 type CropMeta = {
   id: GardenCropId;
   name: string;
@@ -97,15 +114,15 @@ const crops: CropMeta[] = [
   },
 ];
 const plotPositions = [
-  { left: 46, top: 51 },
-  { left: 33, top: 65 },
-  { left: 61, top: 64 },
-  { left: 46, top: 72 },
+  { left: 70.5, top: 59 },
+  { left: 79, top: 59 },
+  { left: 70.5, top: 69 },
+  { left: 79, top: 69 },
 ];
 const animalMeta = {
-  momo: { name: "Momo", label: "奶牛", left: 61 },
-  yuki: { name: "Yuki", label: "绵羊", left: 73 },
-  koko: { name: "Koko", label: "母鸡", left: 84 },
+  momo: { name: "Momo", label: "奶牛", left: 65, top: 23 },
+  yuki: { name: "Yuki", label: "绵羊", left: 74, top: 23 },
+  koko: { name: "Koko", label: "母鸡", left: 86, top: 39 },
 } as const;
 const fishNames = {
   sunfish: "太阳鱼",
@@ -144,13 +161,17 @@ export function GardenStage({
   onBuddyLine: (line: string) => void;
 }) {
   const [mode, setMode] = useState<FarmMode>("plant");
+  const [activeTool, setActiveTool] = useState<FarmTool>("water");
+  const [activePanel, setActivePanel] = useState<FarmPanel | null>(null);
+  const [buddyToast, setBuddyToast] =
+    useState("我先巡视一下农场，需要帮忙就叫我。");
   const [selectedCrop, setSelectedCrop] = useState<GardenCropId>("tomato");
   const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [buddyPose, setBuddyPose] = useState<BuddyPose>("idle");
   const [buddyPosition, setBuddyPosition] = useState<FarmPoint>({
-    left: 43,
-    top: 41,
+    left: 48,
+    top: 28,
   });
   const [walkMarker, setWalkMarker] = useState<FarmPoint | null>(null);
   const [isMoving, setIsMoving] = useState(false);
@@ -158,12 +179,14 @@ export function GardenStage({
   const [walkDuration, setWalkDuration] = useState(600);
   const [now, setNow] = useState(initialNow);
   const movementTimer = useRef<number | null>(null);
+  const toastTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 10_000);
     return () => {
       window.clearInterval(timer);
       if (movementTimer.current) window.clearTimeout(movementTimer.current);
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
     };
   }, []);
 
@@ -191,6 +214,34 @@ export function GardenStage({
       ? 1
       : (snapshot.garden.xp - currentLevelStart) /
         (snapshot.garden.nextLevelXp - currentLevelStart);
+  const clock = new Date(now);
+  const farmTime = new Intl.DateTimeFormat("zh-CN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(clock);
+  const dayNumber = Math.max(
+    1,
+    Math.ceil(
+      (clock.getTime() - new Date(clock.getFullYear(), 0, 1).getTime()) /
+        86_400_000,
+    ) % 28,
+  );
+  const completedTasks = snapshot.dailyTasks.filter(
+    (task) => task.progress >= task.target,
+  ).length;
+  const cropInventoryTotal = snapshot.garden.inventory.reduce(
+    (sum, item) => sum + item.quantity,
+    0,
+  );
+  const showBuddyToast = (message: string) => {
+    setBuddyToast(message);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(
+      () => setBuddyToast("我会自己留意作物和动物的状态。"),
+      5_000,
+    );
+  };
 
   const walkTo = (target: FarmPoint) =>
     new Promise<void>((resolve) => {
@@ -260,11 +311,13 @@ export function GardenStage({
           `收获了 ${cropById(plot.cropId)?.name ?? "作物"}，已放进厨房食材篮。`,
         );
         onBuddyLine("今天的收成真好，晚餐会多一份新鲜味道。");
+        showBuddyToast("收获完成！新的食材已经放进背包。");
       } else {
         onNotice(
           `${cropById(selectedCrop)?.name ?? "种子"}已经种下，离线时也会继续生长。`,
         );
         onBuddyLine("种子住进泥土里了，我们一会儿再来看它吧。");
+        showBuddyToast("种子已经种下，我会记得观察它的状态。");
       }
     } catch (error) {
       onNotice(errorText(error));
@@ -273,17 +326,18 @@ export function GardenStage({
     }
   };
 
-  const waterSelected = async () => {
-    if (!selectedPlot || busy) return;
-    setBusy(`plot-${selectedPlot.plotId}`);
+  const waterSelected = async (targetPlot = selectedPlot) => {
+    if (!targetPlot || busy) return;
+    setBusy(`plot-${targetPlot.plotId}`);
     try {
-      const position = plotPositions[selectedPlot.plotId - 1];
+      const position = plotPositions[targetPlot.plotId - 1];
       await walkTo({ left: position.left - 6, top: position.top - 8 });
       setBuddyPose("gardening");
-      const next = await waterGardenPlot(selectedPlot.plotId);
+      const next = await waterGardenPlot(targetPlot.plotId);
       onSnapshot(next);
       onNotice("浇水完成，成熟时间提前了 15%。");
       onBuddyLine("喝到水以后，它好像一下子更有精神了。");
+      showBuddyToast("浇水完成，作物成长时间缩短了 15%。");
     } catch (error) {
       onNotice(errorText(error));
     } finally {
@@ -316,6 +370,7 @@ export function GardenStage({
         `钓到了${caught ? fishNames[caught.fishId] : "一条鱼"}，已放进鱼篓。`,
       );
       onBuddyLine("钓到了！今天的池塘也送给我们一份小惊喜。");
+      showBuddyToast("河边有新的收获，已经帮你放进背包。");
     } catch (error) {
       onNotice(errorText(error));
     } finally {
@@ -329,9 +384,9 @@ export function GardenStage({
     setBusy(animalId);
     try {
       const animalTargets: Record<typeof animalId, FarmPoint> = {
-        momo: { left: 54, top: 28 },
-        yuki: { left: 65, top: 28 },
-        koko: { left: 75, top: 29 },
+        momo: { left: 58, top: 31 },
+        yuki: { left: 69, top: 31 },
+        koko: { left: 80, top: 43 },
       };
       await walkTo(animalTargets[animalId]);
       setBuddyPose("idle");
@@ -342,6 +397,7 @@ export function GardenStage({
       onBuddyLine(
         `${animal.label}${animal.name}今天看起来很开心，我们明天也来看看它吧。`,
       );
+      showBuddyToast(`${animal.name} 已经吃饱了，亲密度增加。`);
     } catch (error) {
       onNotice(errorText(error));
     } finally {
@@ -349,13 +405,143 @@ export function GardenStage({
     }
   };
 
+  const handleToolOnPlot = (plot: GardenPlot) => {
+    setSelectedPlotId(plot.plotId);
+    setMode("plant");
+    if (activeTool === "water") {
+      if (!plot.cropId) {
+        onNotice("这块土地还没有作物，先选择种子吧。");
+        return;
+      }
+      void waterSelected(plot);
+      return;
+    }
+    if (activeTool === "basket" && !plot.cropId) {
+      onNotice("这里还没有可以收获的作物。");
+      return;
+    }
+    if (activeTool === "hoe" && plot.cropId) {
+      onNotice("这块土地已经种植了作物。");
+      return;
+    }
+    if (activeTool === "axe") {
+      onNotice("斧头用于清理农场边缘的木材，当前土地不需要处理。");
+      return;
+    }
+    void runPlotAction(plot);
+  };
+
   return (
     <section
       aria-label="可种植、钓鱼和照料动物的农场"
       className={`room-stage farm-stage mode-${mode}`}
     >
-      <img alt="OneShow Home 春日农场" className="home-scene" src={farmScene} />
+      <img alt="OneShow Home 春日农场" className="home-scene" src={farmWorld} />
       <div aria-hidden="true" className="scene-shade" />
+
+      <header className="farm-game-hud">
+        <section aria-label="角色状态" className="farm-player-card">
+          <img alt="" src={buddyAvatar} />
+          <div>
+            <strong>{snapshot.profile?.name ?? "Milo"}</strong>
+            <span className="farm-energy-track">
+              <i style={{ width: `${snapshot.state?.energy ?? 80}%` }} />
+              <em>{Math.round((snapshot.state?.energy ?? 80) * 1.2)}/120</em>
+            </span>
+            <small>
+              <b>Lv.{snapshot.garden.level}</b>
+              <Coin weight="fill" />
+              {1_280 +
+                snapshot.garden.xp * 15 +
+                snapshot.homeProgress.leafPoints * 20}
+            </small>
+          </div>
+        </section>
+
+        <section aria-label="农场时间与天气" className="farm-climate-card">
+          <div>
+            <span>
+              春季 {dayNumber}日（周
+              {new Intl.DateTimeFormat("zh-CN", { weekday: "short" })
+                .format(clock)
+                .slice(-1)}
+              ）
+            </span>
+            <strong>{farmTime}</strong>
+          </div>
+          <div>
+            <Sun weight="fill" />
+            <strong>晴天</strong>
+            <span>温度 22°C</span>
+          </div>
+        </section>
+
+        <nav aria-label="农场功能" className="farm-top-actions">
+          <button onClick={() => setActivePanel("inventory")} type="button">
+            <Backpack weight="fill" />
+            <span>背包</span>
+          </button>
+          <button onClick={() => setActivePanel("map")} type="button">
+            <MapTrifold weight="fill" />
+            <span>地图</span>
+          </button>
+          <button onClick={() => setActivePanel("diary")} type="button">
+            <BookOpenText weight="fill" />
+            <span>日记</span>
+          </button>
+          <button onClick={() => setActivePanel("wardrobe")} type="button">
+            <TShirt weight="fill" />
+            <span>装扮</span>
+          </button>
+          <button onClick={() => setActivePanel("settings")} type="button">
+            <GearSix weight="fill" />
+            <span>设置</span>
+          </button>
+        </nav>
+      </header>
+
+      <aside aria-label="农场任务" className="farm-mission-board">
+        <header>
+          <ClipboardText weight="fill" />
+          <strong>任务</strong>
+          <span>
+            {completedTasks}/{snapshot.dailyTasks.length}
+          </span>
+        </header>
+        <section>
+          <small>主线任务</small>
+          <strong>扩建农场</strong>
+          <p>
+            收集木材 <b>18/20</b>
+          </p>
+          <p>
+            收集石材 <b>8/10</b>
+          </p>
+        </section>
+        <section>
+          <small>每日任务</small>
+          {snapshot.dailyTasks.slice(0, 3).map((task) => {
+            const done = task.progress >= task.target;
+            return (
+              <p className={done ? "is-done" : ""} key={task.id}>
+                <Check weight="bold" />
+                {task.title}
+                <b>
+                  {Math.min(task.progress, task.target)}/{task.target}
+                </b>
+              </p>
+            );
+          })}
+        </section>
+      </aside>
+
+      <aside aria-live="polite" className="farm-buddy-event">
+        <img alt="" src={buddyAvatar} />
+        <div>
+          <strong>Buddy 行动</strong>
+          <p>{buddyToast}</p>
+        </div>
+      </aside>
       <button
         aria-label="点击农场地面移动 Buddy"
         className="farm-walk-layer"
@@ -390,11 +576,6 @@ export function GardenStage({
         </small>
       </div>
 
-      <img
-        alt="农场里的奶牛、绵羊和母鸡"
-        className="farm-animal-art"
-        src={animalTrio}
-      />
       {snapshot.garden.animals.map((animal) => {
         const meta = animalMeta[animal.animalId];
         const fed = animal.lastFedDate === localDate();
@@ -405,7 +586,7 @@ export function GardenStage({
             disabled={busy !== null}
             key={animal.animalId}
             onClick={() => void feedAnimal(animal.animalId)}
-            style={{ left: `${meta.left}%` }}
+            style={{ left: `${meta.left}%`, top: `${meta.top}%` }}
             type="button"
           >
             <span>
@@ -431,8 +612,7 @@ export function GardenStage({
             disabled={busy !== null}
             key={plot.plotId}
             onClick={() => {
-              setMode("plant");
-              void runPlotAction(plot);
+              handleToolOnPlot(plot);
             }}
             style={{
               left: `${plotPositions[index].left}%`,
@@ -487,7 +667,7 @@ export function GardenStage({
             width:
               buddyPose === "fishing" && !isMoving
                 ? "23%"
-                : `${11 + buddyPosition.top * 0.1 + (buddyPose === "gardening" ? 1 : 0)}%`,
+                : `${8.5 + buddyPosition.top * 0.07 + (buddyPose === "gardening" ? 0.8 : 0)}%`,
             "--walk-duration": `${walkDuration}ms`,
           } as CSSProperties
         }
@@ -539,34 +719,38 @@ export function GardenStage({
       ) : null}
 
       <div className="farm-tool-dock">
-        <nav aria-label="农场玩法">
-          <button
-            className={mode === "plant" ? "is-active" : ""}
-            onClick={() => setMode("plant")}
-            type="button"
-          >
-            <Plant weight="fill" />
-            <span>种植</span>
-          </button>
-          <button
-            className={mode === "fish" ? "is-active" : ""}
-            onClick={() => setMode("fish")}
-            type="button"
-          >
-            <Fish weight="fill" />
-            <span>钓鱼</span>
-            <small>{fishTotal}</small>
-          </button>
-          <button
-            className={mode === "animal" ? "is-active" : ""}
-            onClick={() => setMode("animal")}
-            type="button"
-          >
-            <Cow weight="fill" />
-            <span>动物</span>
-          </button>
+        <header>
+          <Hammer weight="fill" />
+          <span>工具</span>
+        </header>
+        <nav aria-label="农场工具">
+          {(
+            [
+              { id: "water", label: "浇水壶", icon: Drop },
+              { id: "hoe", label: "锄头", icon: Shovel },
+              { id: "axe", label: "斧头", icon: Axe },
+              { id: "basket", label: "篮子", icon: Basket },
+              { id: "seed", label: "种子", icon: Plant },
+              { id: "feed", label: "饲料", icon: Package },
+            ] as Array<{ id: FarmTool; label: string; icon: typeof Drop }>
+          ).map(({ id, label, icon: Icon }) => (
+            <button
+              aria-pressed={activeTool === id}
+              className={activeTool === id ? "is-active" : ""}
+              key={id}
+              onClick={() => {
+                setActiveTool(id);
+                setMode(id === "feed" ? "animal" : "plant");
+              }}
+              type="button"
+            >
+              <Icon weight="fill" />
+              <span>{label}</span>
+              {id === "seed" ? <small>{cropInventoryTotal || 24}</small> : null}
+            </button>
+          ))}
         </nav>
-        {mode === "plant" ? (
+        {activeTool === "seed" ? (
           <div className="farm-seed-list">
             {crops.map((crop) => {
               const locked = snapshot.garden.level < crop.unlockLevel;
@@ -594,32 +778,115 @@ export function GardenStage({
               );
             })}
           </div>
-        ) : mode === "fish" ? (
-          <div className="farm-inventory-row">
-            {Object.entries(fishNames).map(([id, name]) => (
-              <span key={id}>
-                <Fish weight="fill" />
-                <strong>{name}</strong>
-                <em>
-                  {snapshot.garden.fishInventory.find(
-                    (item) => item.fishId === id,
-                  )?.quantity ?? 0}
-                </em>
-              </span>
-            ))}
-          </div>
-        ) : (
-          <div className="farm-inventory-row">
-            {snapshot.garden.animals.map((animal) => (
-              <span key={animal.animalId}>
-                <Heart weight="fill" />
-                <strong>{animalMeta[animal.animalId].name}</strong>
-                <em>亲密 {animal.affection}</em>
-              </span>
-            ))}
-          </div>
-        )}
+        ) : null}
       </div>
+
+      <button
+        aria-label="去河边钓鱼"
+        className="farm-fish-button"
+        disabled={busy !== null}
+        onClick={() => void goFishing()}
+        type="button"
+      >
+        <Fish weight="fill" />
+        <span>钓鱼</span>
+        <small>{fishTotal}</small>
+      </button>
+
+      <div aria-hidden="true" className="farm-control-hints">
+        <span>点击 · 移动 / 使用工具</span>
+        <span>长按 · 查看状态</span>
+        <span>Buddy 会自主照料农场</span>
+      </div>
+
+      {activePanel ? (
+        <aside aria-label="农场功能面板" className="farm-side-panel">
+          <header>
+            <strong>
+              {activePanel === "inventory"
+                ? "背包"
+                : activePanel === "map"
+                  ? "世界地图"
+                  : activePanel === "diary"
+                    ? "农场日记"
+                    : activePanel === "wardrobe"
+                      ? "装扮"
+                      : "设置"}
+            </strong>
+            <button
+              aria-label="关闭"
+              onClick={() => setActivePanel(null)}
+              type="button"
+            >
+              <X weight="bold" />
+            </button>
+          </header>
+          {activePanel === "inventory" ? (
+            <div className="farm-panel-grid">
+              {crops.slice(0, 4).map((crop) => (
+                <article key={crop.id}>
+                  <img alt="" src={crop.image} />
+                  <strong>{crop.name}</strong>
+                  <span>
+                    {snapshot.garden.inventory.find(
+                      (item) => item.cropId === crop.id,
+                    )?.quantity ?? 0}
+                  </span>
+                </article>
+              ))}
+            </div>
+          ) : activePanel === "map" ? (
+            <div className="farm-world-map">
+              <span>
+                <TreeEvergreen weight="fill" />
+                森林 <small>未开放</small>
+              </span>
+              <span>
+                <Plant weight="fill" />
+                农场 <small>当前位置</small>
+              </span>
+              <span>
+                <Fish weight="fill" />
+                河流 <small>可探索</small>
+              </span>
+              <span>
+                <MapTrifold weight="fill" />
+                小镇 <small>未开放</small>
+              </span>
+            </div>
+          ) : activePanel === "diary" ? (
+            <div className="farm-diary-preview">
+              <CalendarDots weight="fill" />
+              <strong>
+                {new Intl.DateTimeFormat("zh-CN", {
+                  month: "long",
+                  day: "numeric",
+                }).format(clock)}
+              </strong>
+              <p>
+                {snapshot.diaries.at(0)?.content ??
+                  "今天我们一起巡视了农场。土地很安静，但新的故事正在慢慢发芽。"}
+              </p>
+            </div>
+          ) : (
+            <div className="farm-coming-soon">
+              {activePanel === "wardrobe" ? (
+                <TShirt weight="fill" />
+              ) : (
+                <GearSix weight="fill" />
+              )}
+              <strong>
+                {activePanel === "wardrobe" ? "农场装扮" : "农场设置"}
+              </strong>
+              <p>
+                {activePanel === "wardrobe"
+                  ? "后续可以为 Buddy 更换农场服装和工具外观。"
+                  : "声音、模型和本地数据设置仍保存在 Home 设置中。"}
+              </p>
+            </div>
+          )}
+        </aside>
+      ) : null}
     </section>
   );
 }

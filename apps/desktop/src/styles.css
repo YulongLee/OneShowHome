@@ -3150,6 +3150,760 @@ html[data-surface="main"] #root {
   }
 }
 
+/* OneShow Farm game world v2 */
+.room-garden > .home-titlebar,
+.room-garden > .buddy-status,
+.room-garden > .room-rail,
+.room-garden > .weather-card,
+.room-garden > .quick-rail,
+.room-garden > .task-board-toggle,
+.room-garden > .daily-task-board,
+.room-garden > .buddy-bubble,
+.room-garden > .chat-dock,
+.room-garden > .home-notice {
+  display: none;
+}
+
+.room-garden .farm-stage {
+  color: #49361f;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+.room-garden .farm-stage .home-scene {
+  object-position: center;
+  filter: saturate(0.94) contrast(1.02) brightness(0.94) !important;
+}
+
+.room-garden .farm-stage .scene-shade {
+  z-index: 1;
+  background: rgb(31 43 22 / 8%);
+}
+
+.farm-game-hud {
+  position: absolute;
+  z-index: 12;
+  top: 18px;
+  right: 20px;
+  left: 20px;
+  display: grid;
+  grid-template-columns: 255px 285px 1fr;
+  gap: 14px;
+  align-items: start;
+  pointer-events: none;
+}
+
+.farm-player-card,
+.farm-climate-card,
+.farm-top-actions button,
+.farm-mission-board,
+.farm-buddy-event,
+.farm-tool-dock,
+.farm-fish-button,
+.farm-side-panel {
+  border: 2px solid rgb(112 78 38 / 34%);
+  color: #4e3921;
+  background: rgb(255 246 218 / 94%);
+  box-shadow:
+    0 4px 0 rgb(75 51 26 / 16%),
+    0 12px 28px rgb(30 33 16 / 24%);
+  backdrop-filter: blur(12px);
+}
+
+.farm-player-card {
+  display: grid;
+  grid-template-columns: 68px 1fr;
+  gap: 9px;
+  min-height: 94px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 20px;
+  pointer-events: auto;
+}
+
+.farm-player-card > img {
+  width: 68px;
+  height: 68px;
+  align-self: center;
+  border: 3px solid #f6d493;
+  border-radius: 50%;
+  background: #fff2cb;
+  object-fit: cover;
+}
+
+.farm-player-card > div {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+}
+
+.farm-player-card strong {
+  font-family: Georgia, "Songti SC", serif;
+  font-size: 18px;
+}
+
+.farm-energy-track {
+  position: relative;
+  display: block;
+  height: 19px;
+  overflow: hidden;
+  border: 2px solid rgb(128 91 44 / 22%);
+  border-radius: 999px;
+  background: #d8bd87;
+}
+
+.farm-energy-track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: #9cc35b;
+}
+
+.farm-energy-track em {
+  position: relative;
+  z-index: 1;
+  display: block;
+  color: #fffce8;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 15px;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(45 64 26 / 46%);
+}
+
+.farm-player-card small {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #7c5428;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.farm-player-card small b {
+  margin-right: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fff8df;
+  background: #b88649;
+  font-size: 9px;
+}
+
+.farm-player-card small svg {
+  width: 17px;
+  height: 17px;
+  color: #df9a25;
+}
+
+.farm-climate-card {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: 73px;
+  overflow: hidden;
+  border-radius: 18px;
+  color: #fff8df;
+  background: rgb(78 66 42 / 86%);
+  pointer-events: auto;
+}
+
+.farm-climate-card > div {
+  display: grid;
+  gap: 2px;
+  align-content: center;
+  padding: 10px 14px;
+}
+
+.farm-climate-card > div + div {
+  grid-template-columns: 32px 1fr;
+  border-left: 1px solid rgb(255 248 223 / 14%);
+}
+
+.farm-climate-card span {
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.farm-climate-card strong {
+  font-size: 19px;
+  line-height: 1.1;
+}
+
+.farm-climate-card svg {
+  grid-row: 1 / 3;
+  width: 30px;
+  height: 30px;
+  color: #f5b83d;
+}
+
+.farm-climate-card > div:last-child strong {
+  font-size: 12px;
+}
+
+.farm-top-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+
+.farm-top-actions button {
+  display: grid;
+  width: 58px;
+  height: 67px;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  padding: 0;
+  border-radius: 15px;
+  color: #fff6d9;
+  background: rgb(59 58 38 / 86%);
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.farm-top-actions button:hover,
+.farm-top-actions button:focus-visible {
+  background: rgb(97 88 50 / 96%);
+  transform: translateY(-3px);
+}
+
+.farm-top-actions svg {
+  width: 26px;
+  height: 26px;
+  color: #f1ca78;
+}
+
+.farm-top-actions span {
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.farm-mission-board {
+  position: absolute;
+  z-index: 11;
+  top: 127px;
+  left: 20px;
+  width: 225px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  color: #fff7dc;
+  background: rgb(43 44 29 / 78%);
+}
+
+.farm-mission-board > header {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  padding: 10px 13px;
+  border-bottom: 1px solid rgb(255 245 218 / 14%);
+}
+
+.farm-mission-board > header svg {
+  width: 18px;
+  height: 18px;
+  color: #f4c56b;
+}
+
+.farm-mission-board > header strong {
+  font-size: 13px;
+}
+
+.farm-mission-board > header span {
+  margin-left: auto;
+  color: #d8e79d;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.farm-mission-board section {
+  display: grid;
+  gap: 6px;
+  padding: 10px 13px;
+  border-bottom: 1px solid rgb(255 245 218 / 10%);
+}
+
+.farm-mission-board section small {
+  color: #f2c878;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.farm-mission-board section strong {
+  font-size: 11px;
+}
+
+.farm-mission-board section p {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 0;
+  font-size: 10px;
+}
+
+.farm-mission-board section p svg {
+  width: 12px;
+  height: 12px;
+  color: rgb(255 248 221 / 42%);
+}
+
+.farm-mission-board section p b {
+  margin-left: auto;
+  color: #d6e67f;
+  font-size: 9px;
+}
+
+.farm-mission-board section p.is-done {
+  color: #d8e79d;
+}
+
+.farm-mission-board section p.is-done svg {
+  color: #a9ca5d;
+}
+
+.farm-buddy-event {
+  position: absolute;
+  z-index: 11;
+  top: 104px;
+  right: 20px;
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 9px;
+  width: 300px;
+  min-height: 74px;
+  padding: 10px 13px;
+  border-radius: 17px;
+}
+
+.farm-buddy-event > img {
+  width: 48px;
+  height: 48px;
+  border: 2px solid #f2c978;
+  border-radius: 13px;
+  background: #fff0c7;
+  object-fit: cover;
+}
+
+.farm-buddy-event > div {
+  display: grid;
+  align-content: center;
+}
+
+.farm-buddy-event strong {
+  font-size: 11px;
+}
+
+.farm-buddy-event p {
+  margin: 3px 0 0;
+  color: #785934;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.room-garden .farm-level-card {
+  display: none;
+}
+
+.room-garden .farm-walk-layer {
+  z-index: 2;
+  cursor: pointer;
+}
+
+.room-garden .farm-walk-marker {
+  z-index: 8;
+  color: #fff6ce;
+  background: rgb(99 128 55 / 88%);
+}
+
+.room-garden .animal-hotspot {
+  z-index: 7;
+  width: 9%;
+  height: 14%;
+}
+
+.room-garden .animal-hotspot > strong,
+.room-garden .animal-hotspot > span {
+  opacity: 0;
+}
+
+.room-garden .animal-hotspot:hover > strong,
+.room-garden .animal-hotspot:focus-visible > strong,
+.room-garden .animal-hotspot.is-fed > span {
+  opacity: 1;
+}
+
+.room-garden .farm-plot {
+  z-index: 7;
+  width: 8.5%;
+  height: 11.5%;
+  border-radius: 17%;
+}
+
+.room-garden .farm-plot:hover,
+.room-garden .farm-plot:focus-visible,
+.room-garden .farm-plot.is-selected {
+  border: 2px solid rgb(255 246 198 / 88%);
+  background: rgb(245 206 113 / 10%);
+  box-shadow:
+    inset 0 0 18px rgb(255 235 172 / 18%),
+    0 0 0 3px rgb(86 108 52 / 14%);
+}
+
+.room-garden .farm-plot > img {
+  inset: -35% -20% -18%;
+  width: 140%;
+  height: 153%;
+}
+
+.room-garden .farm-plant-plus {
+  width: 23px;
+  height: 23px;
+  border: 2px solid rgb(255 255 255 / 75%);
+  background: rgb(112 91 48 / 76%);
+}
+
+.room-garden .pond-hotspot {
+  z-index: 6;
+  top: 53%;
+  right: 0;
+  width: 15%;
+  height: 42%;
+}
+
+.room-garden .pond-hotspot svg,
+.room-garden .pond-hotspot span {
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.room-garden .pond-hotspot:hover svg,
+.room-garden .pond-hotspot:hover span,
+.room-garden .pond-hotspot:focus-visible svg,
+.room-garden .pond-hotspot:focus-visible span {
+  opacity: 1;
+}
+
+.room-garden .farm-buddy {
+  z-index: 8;
+  filter: drop-shadow(0 7px 4px rgb(37 35 18 / 34%));
+}
+
+.room-garden .farm-detail-card {
+  z-index: 13;
+  right: 160px;
+  bottom: 119px;
+  width: 190px;
+  border-radius: 16px;
+}
+
+.room-garden .farm-tool-dock {
+  position: absolute;
+  z-index: 12;
+  right: auto;
+  bottom: 24px;
+  left: 20px;
+  display: grid;
+  width: min(640px, calc(100vw - 310px));
+  min-height: 82px;
+  grid-template-columns: 58px 1fr;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 19px;
+}
+
+.farm-tool-dock > header {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  border-right: 1px solid rgb(111 79 39 / 18%);
+  color: #7a5529;
+}
+
+.farm-tool-dock > header svg {
+  width: 24px;
+  height: 24px;
+}
+
+.farm-tool-dock > header span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.room-garden .farm-tool-dock > nav {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(62px, 1fr));
+  gap: 5px;
+  padding: 0;
+  border: 0;
+}
+
+.room-garden .farm-tool-dock > nav button {
+  width: auto;
+  min-width: 0;
+  min-height: 64px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  color: #704e29;
+  background: rgb(255 252 233 / 48%);
+}
+
+.room-garden .farm-tool-dock > nav button:hover,
+.room-garden .farm-tool-dock > nav button:focus-visible,
+.room-garden .farm-tool-dock > nav button.is-active {
+  border-color: rgb(134 91 41 / 34%);
+  color: #fff9df;
+  background: #9a723c;
+  transform: translateY(-2px);
+}
+
+.room-garden .farm-tool-dock > nav svg {
+  width: 25px;
+  height: 25px;
+}
+
+.room-garden .farm-tool-dock > nav span {
+  font-size: 9px;
+}
+
+.room-garden .farm-tool-dock > nav small {
+  top: 3px;
+  right: 4px;
+}
+
+.room-garden .farm-seed-list {
+  position: absolute;
+  bottom: 91px;
+  left: 64px;
+  display: grid;
+  width: 480px;
+  grid-template-columns: repeat(6, 1fr);
+  padding: 6px;
+  border: 2px solid rgb(112 78 38 / 26%);
+  border-radius: 15px;
+  background: rgb(255 246 218 / 94%);
+  box-shadow: 0 12px 28px rgb(31 31 16 / 22%);
+}
+
+.room-garden .farm-seed-list > button {
+  min-height: 58px;
+}
+
+.room-garden .farm-seed-list img {
+  width: 34px;
+  height: 30px;
+}
+
+.farm-fish-button {
+  position: absolute;
+  z-index: 12;
+  right: 112px;
+  bottom: 26px;
+  display: grid;
+  width: 76px;
+  height: 76px;
+  place-items: center;
+  align-content: center;
+  gap: 1px;
+  border-radius: 50%;
+  color: #fff8e0;
+  background: rgb(79 126 117 / 94%);
+  cursor: pointer;
+}
+
+.farm-fish-button svg {
+  width: 30px;
+  height: 30px;
+}
+
+.farm-fish-button span {
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.farm-fish-button small {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  display: grid;
+  min-width: 19px;
+  height: 19px;
+  place-items: center;
+  border-radius: 50%;
+  color: #6a4a26;
+  background: #fff0bc;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.farm-control-hints {
+  position: absolute;
+  z-index: 11;
+  right: 205px;
+  bottom: 4px;
+  left: 20px;
+  display: flex;
+  gap: 18px;
+  color: #fff9df;
+  font-size: 8px;
+  font-weight: 800;
+  text-shadow: 0 2px 4px rgb(33 34 18 / 64%);
+}
+
+.farm-side-panel {
+  position: absolute;
+  z-index: 20;
+  top: 102px;
+  right: 20px;
+  width: 310px;
+  min-height: 210px;
+  overflow: hidden;
+  border-radius: 19px;
+}
+
+.farm-side-panel > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 15px;
+  border-bottom: 1px solid rgb(111 79 39 / 16%);
+}
+
+.farm-side-panel > header strong {
+  font-family: Georgia, "Songti SC", serif;
+  font-size: 16px;
+}
+
+.farm-side-panel > header button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  color: #76552f;
+  background: rgb(128 92 48 / 12%);
+  cursor: pointer;
+}
+
+.farm-side-panel > header svg {
+  width: 16px;
+  height: 16px;
+}
+
+.farm-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.farm-panel-grid article {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 5px;
+  align-items: center;
+  padding: 7px;
+  border-radius: 12px;
+  background: rgb(255 255 255 / 44%);
+}
+
+.farm-panel-grid img {
+  width: 44px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.farm-panel-grid strong,
+.farm-panel-grid span {
+  font-size: 9px;
+}
+
+.farm-world-map {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 12px;
+}
+
+.farm-world-map > span {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border-radius: 13px;
+  background: rgb(115 142 75 / 14%);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.farm-world-map svg {
+  width: 24px;
+  height: 24px;
+  color: #76944e;
+}
+
+.farm-world-map small {
+  color: #907352;
+  font-size: 7px;
+}
+
+.farm-diary-preview,
+.farm-coming-soon {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 22px;
+  text-align: center;
+}
+
+.farm-diary-preview > svg,
+.farm-coming-soon > svg {
+  width: 34px;
+  height: 34px;
+  color: #8ea658;
+}
+
+.farm-diary-preview strong,
+.farm-coming-soon strong {
+  font-size: 12px;
+}
+
+.farm-diary-preview p,
+.farm-coming-soon p {
+  margin: 0;
+  color: #765f43;
+  font-size: 9px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1040px) {
+  .farm-game-hud {
+    grid-template-columns: 220px 245px 1fr;
+  }
+  .farm-player-card {
+    grid-template-columns: 55px 1fr;
+  }
+  .farm-player-card > img {
+    width: 55px;
+    height: 55px;
+  }
+  .farm-top-actions button {
+    width: 49px;
+  }
+  .farm-top-actions button:nth-child(4) {
+    display: none;
+  }
+  .farm-mission-board {
+    width: 205px;
+  }
+  .farm-buddy-event {
+    width: 270px;
+  }
+}
+
 @keyframes hotspot-breathe {
   0%,
   100% {

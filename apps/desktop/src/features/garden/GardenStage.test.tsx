@@ -47,6 +47,30 @@ const snapshot: DesktopSnapshot = {
 afterEach(() => vi.useRealTimers());
 
 describe("GardenStage game movement", () => {
+  it("opens the game inventory and exposes the farm toolbelt", () => {
+    render(
+      <GardenStage
+        onBuddyLine={vi.fn()}
+        onNotice={vi.fn()}
+        onSnapshot={vi.fn()}
+        snapshot={snapshot}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "浇水壶" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "背包" }));
+    expect(
+      screen.getByRole("complementary", { name: "农场功能面板" }),
+    ).toHaveTextContent("番茄");
+    fireEvent.click(screen.getByRole("button", { name: "关闭" }));
+    expect(
+      screen.queryByRole("complementary", { name: "农场功能面板" }),
+    ).toBeNull();
+  });
+
   it("walks Buddy toward a clicked map position before settling", async () => {
     vi.useFakeTimers();
     const onBuddyLine = vi.fn();

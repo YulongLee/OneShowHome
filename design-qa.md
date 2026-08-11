@@ -1,57 +1,68 @@
-# OneShow Home Farm Design QA
+# OneShow Home Farm v2 Design QA
 
 ## Evidence
 
-- Source visual truth: `.qa/farm-reference.png`
-- Final implementation: `.qa/farm-implementation.png`
-- Focused fishing state: `.qa/farm-fishing-state.png`
-- Focused animal-care state: `.qa/farm-animal-state.png`
-- Source pixels: 1313 × 1198
-- Implementation pixels / CSS viewport: 1120 × 700 at macOS display scale captured as a window region
-- State: daylight farm, existing planted crops, default planting tool selected
-- Density normalization: the source is a portrait-like game composition while the product is a fixed 16:10 desktop window. Comparison therefore uses equal full-screen content framing rather than pixel-for-pixel scaling.
+- Source visual truth: `.qa/farm-v2-source.png`
+- Native macOS implementation: `.qa/farm-v2-implementation.png`
+- Side-by-side comparison: `.qa/farm-v2-comparison.png`
+- Source pixels: 1307 × 1203.
+- Implementation pixels / CSS viewport: 1120 × 700, captured from the packaged macOS application at display scale 1.
+- Comparison canvas: 1881 × 700. The source was proportionally normalized to 761 × 700 and placed beside the 1120 × 700 implementation without cropping.
+- State: spring daylight farm, water tool selected, two growing plots and two open plots, Buddy idle on the central path.
+- Browser note: the in-app browser preview was checked at `127.0.0.1:1420`; it correctly cannot load the native Tauri data bridge. Product QA therefore uses the packaged native application, which is the actual requested runtime.
 
 ## Full-view comparison evidence
 
-The implementation preserves the source's defining composition: cottage on the left, pasture and animals above, cultivated plots in the center, water on the right, Buddy in the working area, and a persistent tool dock along the bottom. It deliberately removes the source's shop, currencies, social, event, map and monetization surfaces to remain inside OneShow Home's companion-product scope.
+The comparison image confirms that the implementation carries over the reference's defining hierarchy: profile and energy at top-left, season/time/weather beside it, five compact actions at top-right, a translucent task board on the left, a Buddy action notice on the right, one continuous 2.5D farm world, persistent tools at the bottom and a dedicated river action. The scene was intentionally adapted from the source's near-square composition to the product's 16:10 macOS window instead of stretching or cropping the reference.
 
 ## Focused comparison evidence
 
-- Fishing: the pond is visible and clickable, switches Buddy to a dedicated fishing pose, waits for a catch, updates the fish inventory, and displays a success notice.
-- Animal care: cow, sheep and hen remain visually distinct in the pasture. Feeding Momo updates affection, daily-fed state, Buddy dialogue and the animal tool panel.
-- Planting: all four plots retain visible interaction regions; planted crops show growth scale, mature harvest affordance and offline timers. The lower plot was raised so the persistent tool dock no longer blocks its primary hit target.
+- HUD: profile, level, energy, coins, season, day, time and weather remain readable against the detailed scene and use the same cream, olive and dark translucent surface families as the source.
+- Farm world: cottage, blue-roof barn, pasture, chicken coop, cultivated fields, four personal plots, river and bridge are visible in one camera view. The central stone path remains unobstructed for character navigation.
+- Tools and crops: the selected water tool has a clear active state; seed selection expands into a six-crop chooser; four persisted plots remain individually clickable and show empty, growing and harvest-ready states.
+- Buddy behavior: the character stands on the central path, uses the four-frame walk cycle during navigation, walks to a target before acting, and returns to the standing frame. Farm action notifications describe Buddy's current or completed work.
+- Panels: backpack, map and diary open as real panels and close through a labelled control. Wardrobe and settings are intentionally preview-only because they are outside the first playable farm loop.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: matches the existing OneShow Home compact macOS UI hierarchy. Small labels remain readable at the 1120 × 700 product viewport.
-- Spacing and layout rhythm: persistent room rails, status cards, tool dock and chat dock remain aligned to the current desktop design system. Farm regions do not overflow the window.
-- Colors and visual tokens: warm cream surfaces, sage actions, terracotta roofs and sky-blue water match both the source direction and existing Home scenes.
-- Image quality and asset fidelity: the farm scene, animal trio and fishing Buddy are full raster assets generated in the same hand-painted anime style. Transparent assets have clean alpha edges and no visible chroma-key halo at product scale.
-- Copy and content: language is companion-oriented and action-specific. Commercial and social copy from the source was intentionally omitted.
+- Fonts and typography: the implementation uses PingFang SC for dense game UI and Georgia/Songti-style display faces for the player name and panel titles. Weight, line height and compact labels match the source hierarchy without illegible microcopy at 1120 × 700.
+- Spacing and layout rhythm: top HUD groups align to a shared 18–20 px inset; the mission board follows the profile column; the toolbelt uses six equal slots and does not cover the four interactive plots. No persistent control overflows the window.
+- Colors and visual tokens: warm parchment, dark olive, muted gold, spring green and river teal consistently map to profile, tasks, selected tools, notifications and action controls. Text contrast remains readable over the painted background.
+- Image quality and asset fidelity: the farm world is a dedicated 1672 × 941 raster asset created for the 16:9 gameplay slot, not a screenshot crop or CSS illustration. Existing Buddy and crop raster assets remain sharp at product scale. Phosphor provides the UI icon family; no emoji, handcrafted SVG illustration or placeholder art is used.
+- Copy and content: the HUD and tasks use OneShow Home's companion framing. Buddy says what it is doing and promises to observe crops, rather than presenting the farm as an anonymous economy simulator.
+- Accessibility: primary controls are native buttons with visible labels, active tools expose `aria-pressed`, map movement has an accessible name, panels have labelled regions and a labelled close button, and keyboard focus uses the existing application focus treatment.
 
 ## Comparison history
 
 ### Iteration 1
 
-- [P2] Buddy dialogue obscured part of the animal group.
-- [P2] The fourth plot's interaction center sat too close to the bottom tool dock.
-- Fixes: moved the farm dialogue bubble to the open left path and raised the fourth plot interaction center from 79% to 72%.
-- Post-fix evidence: `.qa/farm-implementation.png` shows all animals unobstructed and the lower crop/plot affordance above the dock.
+- [P1] The old screen read as a Home page with overlays rather than a farm game.
+  Fix: replaced the sparse farm scene and inherited Home rails with a complete game HUD and a dedicated continuous 2.5D world.
+- [P1] The previous scene lacked the reference's coherent cottage–pasture–fields–river composition.
+  Fix: generated and integrated a widescreen farm world with all gameplay regions and a reserved central movement path.
+- [P2] The seed chooser was permanently open and created a second competing bottom toolbar.
+  Fix: changed the default tool to the water can; the crop chooser now opens only after selecting the seed tool.
+- [P2] Buddy initially stood over the cabbage field and was too large for the scene scale.
+  Fix: moved the initial position to the central stone path and reduced depth-scaled character sizing.
+- Post-fix evidence: `.qa/farm-v2-implementation.png` and `.qa/farm-v2-comparison.png`.
 
 ### Final pass
 
-No actionable P0, P1 or P2 differences remain. The lower interface density versus the reference is an intentional desktop-companion constraint, not unfinished fidelity.
+No actionable P0, P1 or P2 visual mismatches remain for the scoped first playable farm loop. The missing social, shop, activity and circular world-map controls are intentional scope exclusions from the reference, consistent with the supplied PRD's first implementation round.
 
 ## Primary interactions tested
 
-- Select planting mode and interact with a plot.
-- Select fishing mode, click the pond, catch a fish and update inventory.
-- Select animal mode, feed Momo and update affection/daily state.
-- Switch between planting, fishing and animal tool panels.
+- Click map ground and transition from idle to the four-frame walk cycle, then back to idle.
+- Select water, hoe, axe, basket, seed and feed tools with visible active states.
+- Open and close backpack; expose persisted crop inventory.
+- Open map and diary panels.
+- Select a crop, interact with persisted land, water growing crops and harvest ready crops.
+- Walk to pasture animals before feeding; walk to the river before fishing.
+- Automated frontend, API and Rust state tests verify the existing crop, fishing and animal persistence paths.
 
 ## Follow-up polish
 
-- [P3] Add one alternate idle pose per animal in a later animation pass.
-- [P3] Add seasonal farm background variants after the core Home loop is stable.
+- [P3] Add north/south walk-cycle sheets when movement expands from left/right presentation into eight-direction navigation.
+- [P3] Add alternate weather and seasonal farm-world assets after the spring gameplay loop is stable.
 
 final result: passed
