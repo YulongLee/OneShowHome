@@ -3171,12 +3171,12 @@ html[data-surface="main"] #root {
 
 .room-garden .farm-stage .home-scene {
   object-position: center;
-  filter: saturate(0.94) contrast(1.02) brightness(0.94) !important;
+  filter: saturate(1.02) contrast(1.01) brightness(1.03) !important;
 }
 
 .room-garden .farm-stage .scene-shade {
   z-index: 1;
-  background: rgb(31 43 22 / 8%);
+  background: rgb(255 250 229 / 2%);
 }
 
 .farm-game-hud {
@@ -3200,22 +3200,22 @@ html[data-surface="main"] #root {
 .farm-tool-dock,
 .farm-fish-button,
 .farm-side-panel {
-  border: 2px solid rgb(112 78 38 / 34%);
+  border: 2px solid rgb(111 78 39 / 30%);
   color: #4e3921;
-  background: rgb(255 246 218 / 94%);
+  background: rgb(255 246 218 / 96%);
   box-shadow:
-    0 4px 0 rgb(75 51 26 / 16%),
-    0 12px 28px rgb(30 33 16 / 24%);
-  backdrop-filter: blur(12px);
+    0 3px 0 rgb(75 51 26 / 12%),
+    0 10px 24px rgb(30 45 30 / 18%);
+  backdrop-filter: blur(10px);
 }
 
 .farm-player-card {
   display: grid;
   grid-template-columns: 68px 1fr;
   gap: 9px;
-  min-height: 94px;
+  min-height: 90px;
   padding: 8px 12px 8px 8px;
-  border-radius: 20px;
+  border-radius: 18px;
   pointer-events: auto;
 }
 
@@ -3299,9 +3299,9 @@ html[data-surface="main"] #root {
   grid-template-columns: 1.1fr 0.9fr;
   min-height: 73px;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 16px;
   color: #fff8df;
-  background: rgb(78 66 42 / 86%);
+  background: rgb(61 77 69 / 84%);
   pointer-events: auto;
 }
 
@@ -3353,9 +3353,9 @@ html[data-surface="main"] #root {
   align-content: center;
   gap: 3px;
   padding: 0;
-  border-radius: 15px;
+  border-radius: 14px;
   color: #fff6d9;
-  background: rgb(59 58 38 / 86%);
+  background: rgb(60 70 62 / 84%);
   cursor: pointer;
   transition:
     transform 160ms ease,
@@ -3364,7 +3364,7 @@ html[data-surface="main"] #root {
 
 .farm-top-actions button:hover,
 .farm-top-actions button:focus-visible {
-  background: rgb(97 88 50 / 96%);
+  background: rgb(83 100 70 / 96%);
   transform: translateY(-3px);
 }
 
@@ -3389,7 +3389,7 @@ html[data-surface="main"] #root {
   border: 0;
   border-radius: 16px;
   color: #fff7dc;
-  background: rgb(43 44 29 / 78%);
+  background: rgb(43 57 47 / 76%);
 }
 
 .farm-mission-board > header {
@@ -3470,9 +3470,9 @@ html[data-surface="main"] #root {
   display: grid;
   grid-template-columns: 48px 1fr;
   gap: 9px;
-  width: 300px;
-  min-height: 74px;
-  padding: 10px 13px;
+  width: 286px;
+  min-height: 68px;
+  padding: 8px 11px;
   border-radius: 17px;
 }
 
@@ -3513,7 +3513,7 @@ html[data-surface="main"] #root {
 .room-garden .farm-walk-marker {
   z-index: 8;
   color: #fff6ce;
-  background: rgb(99 128 55 / 88%);
+  background: rgb(91 137 69 / 88%);
 }
 
 .room-garden .animal-hotspot {
@@ -3544,7 +3544,7 @@ html[data-surface="main"] #root {
 .room-garden .farm-plot:focus-visible,
 .room-garden .farm-plot.is-selected {
   border: 2px solid rgb(255 246 198 / 88%);
-  background: rgb(245 206 113 / 10%);
+  background: rgb(255 223 119 / 13%);
   box-shadow:
     inset 0 0 18px rgb(255 235 172 / 18%),
     0 0 0 3px rgb(86 108 52 / 14%);
@@ -3586,7 +3586,8 @@ html[data-surface="main"] #root {
 
 .room-garden .farm-buddy {
   z-index: 8;
-  filter: drop-shadow(0 7px 4px rgb(37 35 18 / 34%));
+  filter: drop-shadow(0 6px 3px rgb(37 45 25 / 28%)) saturate(1.04)
+    contrast(1.02);
 }
 
 .room-garden .farm-detail-card {
@@ -3601,15 +3602,16 @@ html[data-surface="main"] #root {
   position: absolute;
   z-index: 12;
   right: auto;
-  bottom: 24px;
-  left: 20px;
+  bottom: 20px;
+  left: 50%;
   display: grid;
-  width: min(640px, calc(100vw - 310px));
-  min-height: 82px;
+  width: min(610px, calc(100vw - 330px));
+  min-height: 78px;
   grid-template-columns: 58px 1fr;
   gap: 4px;
   padding: 8px;
-  border-radius: 19px;
+  border-radius: 17px;
+  transform: translateX(-50%);
 }
 
 .farm-tool-dock > header {
@@ -3642,11 +3644,11 @@ html[data-surface="main"] #root {
 .room-garden .farm-tool-dock > nav button {
   width: auto;
   min-width: 0;
-  min-height: 64px;
+  min-height: 60px;
   border: 1px solid transparent;
   border-radius: 13px;
   color: #704e29;
-  background: rgb(255 252 233 / 48%);
+  background: rgb(255 252 233 / 62%);
 }
 
 .room-garden .farm-tool-dock > nav button:hover,
@@ -3654,7 +3656,7 @@ html[data-surface="main"] #root {
 .room-garden .farm-tool-dock > nav button.is-active {
   border-color: rgb(134 91 41 / 34%);
   color: #fff9df;
-  background: #9a723c;
+  background: #708f4e;
   transform: translateY(-2px);
 }
 
@@ -3675,7 +3677,7 @@ html[data-surface="main"] #root {
 .room-garden .farm-seed-list {
   position: absolute;
   bottom: 91px;
-  left: 64px;
+  left: 50%;
   display: grid;
   width: 480px;
   grid-template-columns: repeat(6, 1fr);
@@ -3684,6 +3686,7 @@ html[data-surface="main"] #root {
   border-radius: 15px;
   background: rgb(255 246 218 / 94%);
   box-shadow: 0 12px 28px rgb(31 31 16 / 22%);
+  transform: translateX(-50%);
 }
 
 .room-garden .farm-seed-list > button {
@@ -3708,7 +3711,7 @@ html[data-surface="main"] #root {
   gap: 1px;
   border-radius: 50%;
   color: #fff8e0;
-  background: rgb(79 126 117 / 94%);
+  background: rgb(72 128 118 / 94%);
   cursor: pointer;
 }
 

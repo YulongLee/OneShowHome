@@ -36,7 +36,7 @@ import {
 import buddyFishing from "../../assets/farm/buddy-fishing.png";
 import buddyStanding from "../../assets/farm/buddy-standing.png";
 import buddyWalkCycle from "../../assets/farm/buddy-walk-cycle.png";
-import farmWorld from "../../assets/farm/farm-world-v2.png";
+import farmWorld from "../../assets/farm/farm-world-anime-v3.png";
 import cropCarrot from "../../assets/garden/crop-carrot.png";
 import cropLavender from "../../assets/garden/crop-lavender.png";
 import cropLettuce from "../../assets/garden/crop-lettuce.png";
@@ -171,7 +171,7 @@ export function GardenStage({
   const [buddyPose, setBuddyPose] = useState<BuddyPose>("idle");
   const [buddyPosition, setBuddyPosition] = useState<FarmPoint>({
     left: 48,
-    top: 28,
+    top: 42,
   });
   const [walkMarker, setWalkMarker] = useState<FarmPoint | null>(null);
   const [isMoving, setIsMoving] = useState(false);
@@ -666,8 +666,8 @@ export function GardenStage({
             top: `${buddyPosition.top}%`,
             width:
               buddyPose === "fishing" && !isMoving
-                ? "23%"
-                : `${8.5 + buddyPosition.top * 0.07 + (buddyPose === "gardening" ? 0.8 : 0)}%`,
+                ? "15%"
+                : `${5.2 + buddyPosition.top * 0.028 + (buddyPose === "gardening" ? 0.5 : 0)}%`,
             "--walk-duration": `${walkDuration}ms`,
           } as CSSProperties
         }
