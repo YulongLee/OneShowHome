@@ -110,12 +110,31 @@ pub struct GardenInventoryItem {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FarmAnimal {
+    animal_id: String,
+    kind: String,
+    affection: i64,
+    last_fed_date: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FishInventoryItem {
+    fish_id: String,
+    quantity: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct GardenState {
     plots: Vec<GardenPlot>,
     inventory: Vec<GardenInventoryItem>,
     level: i64,
     xp: i64,
     next_level_xp: i64,
+    animals: Vec<FarmAnimal>,
+    fish_inventory: Vec<FishInventoryItem>,
+    last_fished_at: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -223,9 +242,26 @@ impl DesktopStore {
                    crop_id TEXT PRIMARY KEY,
                    quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0)
                  );
+                 CREATE TABLE IF NOT EXISTS farm_animals (
+                   animal_id TEXT PRIMARY KEY,
+                   kind TEXT NOT NULL CHECK (kind IN ('cow','sheep','chicken')),
+                   affection INTEGER NOT NULL DEFAULT 0 CHECK (affection >= 0),
+                   last_fed_date TEXT
+                 );
+                 CREATE TABLE IF NOT EXISTS fish_inventory (
+                   fish_id TEXT PRIMARY KEY,
+                   quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0)
+                 );
+                 CREATE TABLE IF NOT EXISTS farm_profile (
+                   id INTEGER PRIMARY KEY CHECK (id = 1),
+                   last_fished_at INTEGER
+                 );
                  INSERT OR IGNORE INTO garden_profile (id, xp) VALUES (1, 0);
                  INSERT OR IGNORE INTO garden_plots (plot_id) VALUES (1), (2), (3), (4);
-                 PRAGMA user_version=3;",
+                 INSERT OR IGNORE INTO farm_animals (animal_id, kind) VALUES
+                   ('momo', 'cow'), ('yuki', 'sheep'), ('koko', 'chicken');
+                 INSERT OR IGNORE INTO farm_profile (id) VALUES (1);
+                 PRAGMA user_version=4;",
             )
             .map_err(|error| error.to_string())?;
         Ok(Self {
@@ -577,6 +613,93 @@ impl DesktopStore {
         snapshot_from_connection(&connection)
     }
 
+    pub fn feed_farm_animal(
+        &self,
+        animal_id: &str,
+        now_ms: i64,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
+        let animal_name = match animal_id {
+            "momo" => "奶牛 Momo",
+            "yuki" => "绵羊 Yuki",
+            "koko" => "母鸡 Koko",
+            _ => return Err("没有找到这只动物".to_string()),
+        };
+        let connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
+        let last_fed_date: Option<String> = connection
+            .query_row(
+                "SELECT last_fed_date FROM farm_animals WHERE animal_id=?1",
+                [animal_id],
+                |row| row.get(0),
+            )
+            .map_err(|_| "没有找到这只动物".to_string())?;
+        if last_fed_date.as_deref() == Some(local_date) {
+            return Err(format!("{}今天已经吃饱了", animal_name));
+        }
+        connection
+            .execute(
+                "UPDATE farm_animals SET affection=affection+1, last_fed_date=?1 WHERE animal_id=?2",
+                params![local_date, animal_id],
+            )
+            .map_err(|error| error.to_string())?;
+        record_garden_action(
+            &connection,
+            "feed",
+            &format!("给{}准备了喜欢的食物", animal_name),
+            now_ms,
+            local_date,
+        )?;
+        snapshot_from_connection(&connection)
+    }
+
+    pub fn fish_at_pond(&self, now_ms: i64, local_date: &str) -> Result<DesktopSnapshot, String> {
+        let connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date, now_ms)?;
+        let last_fished_at: Option<i64> = connection
+            .query_row(
+                "SELECT last_fished_at FROM farm_profile WHERE id=1",
+                [],
+                |row| row.get(0),
+            )
+            .map_err(|error| error.to_string())?;
+        if last_fished_at.is_some_and(|last| now_ms - last < 10_000) {
+            return Err("水面还没平静，稍等一下再抛竿吧".to_string());
+        }
+        let (fish_id, fish_name) = match (now_ms / 1_000).rem_euclid(3) {
+            0 => ("sunfish", "太阳鱼"),
+            1 => ("carp", "小鲤鱼"),
+            _ => ("bluegill", "蓝鳃鱼"),
+        };
+        connection
+            .execute(
+                "INSERT INTO fish_inventory (fish_id, quantity) VALUES (?1, 1)
+                 ON CONFLICT(fish_id) DO UPDATE SET quantity=quantity+1",
+                [fish_id],
+            )
+            .map_err(|error| error.to_string())?;
+        connection
+            .execute(
+                "UPDATE farm_profile SET last_fished_at=?1 WHERE id=1",
+                [now_ms],
+            )
+            .map_err(|error| error.to_string())?;
+        record_garden_action(
+            &connection,
+            "fish",
+            &format!("在池塘钓到了一条{}", fish_name),
+            now_ms,
+            local_date,
+        )?;
+        snapshot_from_connection(&connection)
+    }
+
     pub fn claim_task(&self, task_id: &str) -> Result<DesktopSnapshot, String> {
         let connection = self
             .connection
@@ -811,6 +934,9 @@ impl DesktopStore {
             .transaction()
             .map_err(|error| error.to_string())?;
         for table in [
+            "fish_inventory",
+            "farm_animals",
+            "farm_profile",
             "garden_inventory",
             "garden_plots",
             "garden_profile",
@@ -836,6 +962,15 @@ impl DesktopStore {
                 "INSERT INTO garden_plots (plot_id) VALUES (1), (2), (3), (4)",
                 [],
             )
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute(
+                "INSERT INTO farm_animals (animal_id, kind) VALUES ('momo', 'cow'), ('yuki', 'sheep'), ('koko', 'chicken')",
+                [],
+            )
+            .map_err(|error| error.to_string())?;
+        transaction
+            .execute("INSERT INTO farm_profile (id) VALUES (1)", [])
             .map_err(|error| error.to_string())?;
         transaction.commit().map_err(|error| error.to_string())?;
         let _ = fs::remove_dir_all(self.data_dir.join("gallery"));
@@ -1137,12 +1272,22 @@ fn ensure_daily_tasks(
             |row| row.get(0),
         )
         .map_err(|error| error.to_string())?;
+    let hungry_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM farm_animals WHERE last_fed_date IS NULL OR last_fed_date<>?1",
+            [local_date],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
     let (action, title, description, reward) = if ready_count > 0 {
         ("harvest", "小小收获", "从菜园收获一份成熟作物", 15)
-    } else if empty_count > 0 {
-        ("plant", "播下一颗种子", "在空花圃种下一种喜欢的作物", 12)
     } else {
-        ("water", "花儿喝水", "给生长中的作物浇一次水", 12)
+        match seed % 3 {
+            1 => ("fish", "池塘时光", "和 Buddy 在池塘钓一条鱼", 15),
+            2 if hungry_count > 0 => ("feed", "动物早餐", "给农场动物喂一次食", 12),
+            _ if empty_count > 0 => ("plant", "播下一颗种子", "在空花圃种下一种喜欢的作物", 12),
+            _ => ("water", "花儿喝水", "给生长中的作物浇一次水", 12),
+        }
     };
     connection
         .execute(
@@ -1201,6 +1346,43 @@ fn query_garden_state(connection: &Connection) -> Result<GardenState, String> {
             row.get(0)
         })
         .map_err(|error| error.to_string())?;
+    let mut animal_statement = connection
+        .prepare(
+            "SELECT animal_id, kind, affection, last_fed_date FROM farm_animals ORDER BY animal_id",
+        )
+        .map_err(|error| error.to_string())?;
+    let animals = animal_statement
+        .query_map([], |row| {
+            Ok(FarmAnimal {
+                animal_id: row.get(0)?,
+                kind: row.get(1)?,
+                affection: row.get(2)?,
+                last_fed_date: row.get(3)?,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    let mut fish_statement = connection
+        .prepare("SELECT fish_id, quantity FROM fish_inventory WHERE quantity>0 ORDER BY fish_id")
+        .map_err(|error| error.to_string())?;
+    let fish_inventory = fish_statement
+        .query_map([], |row| {
+            Ok(FishInventoryItem {
+                fish_id: row.get(0)?,
+                quantity: row.get(1)?,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    let last_fished_at = connection
+        .query_row(
+            "SELECT last_fished_at FROM farm_profile WHERE id=1",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
     let level = garden_level(xp);
     Ok(GardenState {
         plots,
@@ -1208,6 +1390,9 @@ fn query_garden_state(connection: &Connection) -> Result<GardenState, String> {
         level,
         xp,
         next_level_xp: next_garden_level_xp(level),
+        animals,
+        fish_inventory,
+        last_fished_at,
     })
 }
 
@@ -1386,10 +1571,7 @@ mod tests {
             .unwrap();
         let planted_plot = &planted.garden.plots[0];
         assert_eq!(planted_plot.crop_id.as_deref(), Some("tomato"));
-        assert!(planted
-            .daily_tasks
-            .iter()
-            .any(|task| task.action == "plant" && task.progress == 1));
+        assert_eq!(planted.daily_tasks.len(), 3);
 
         let original_ready_at = planted_plot.ready_at.unwrap();
         let watered = store.water_garden_plot(1, 10_000, "2026-08-11").unwrap();
@@ -1403,6 +1585,32 @@ mod tests {
         assert_eq!(harvested.garden.inventory[0].crop_id, "tomato");
         assert_eq!(harvested.garden.inventory[0].quantity, 1);
         assert_eq!(harvested.garden.xp, 12);
+        let _ = std::fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn fishing_and_animal_care_persist_in_the_farm() {
+        let directory =
+            std::env::temp_dir().join(format!("oneshow-home-farm-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        let store = DesktopStore::open(directory.clone()).unwrap();
+        store.create_buddy("Milo", "milo", "warm", 1_000).unwrap();
+
+        let fed = store.feed_farm_animal("momo", 2_000, "2026-08-11").unwrap();
+        let momo = fed
+            .garden
+            .animals
+            .iter()
+            .find(|animal| animal.animal_id == "momo")
+            .unwrap();
+        assert_eq!(momo.affection, 1);
+        assert_eq!(momo.last_fed_date.as_deref(), Some("2026-08-11"));
+        assert!(store.feed_farm_animal("momo", 3_000, "2026-08-11").is_err());
+
+        let fished = store.fish_at_pond(20_000, "2026-08-11").unwrap();
+        assert_eq!(fished.garden.fish_inventory.len(), 1);
+        assert_eq!(fished.garden.fish_inventory[0].quantity, 1);
+        assert!(store.fish_at_pond(25_000, "2026-08-11").is_err());
         let _ = std::fs::remove_dir_all(directory);
     }
 }

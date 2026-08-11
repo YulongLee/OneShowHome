@@ -1,48 +1,57 @@
-# OneShow Home Interactive Desktop Cottage — Design QA
+# OneShow Home Farm Design QA
 
 ## Evidence
 
-- Source visual truth: `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-b624bc0e-a15b-474d-95e7-b9ee2af42d43.png`
-- Implementation screenshots: `.qa/interactive-house-idle.png`, `.qa/interactive-house-wave.png`
-- Combined comparison input: `.qa/interactive-house-comparison.png`
-- Viewport: macOS transparent native house window configured at 310 × 290 CSS px.
-- Source pixels: 296 × 374; implementation pixels: 310 × 290 for both states.
-- Density normalization: the source and both native captures are shown at native scale in one 1020 × 430 comparison canvas. Aspect ratios are preserved.
-- State: source fixed Buddy; implementation idle breathing state and automatic/hover greeting state.
+- Source visual truth: `.qa/farm-reference.png`
+- Final implementation: `.qa/farm-implementation.png`
+- Focused fishing state: `.qa/farm-fishing-state.png`
+- Focused animal-care state: `.qa/farm-animal-state.png`
+- Source pixels: 1313 × 1198
+- Implementation pixels / CSS viewport: 1120 × 700 at macOS display scale captured as a window region
+- State: daylight farm, existing planted crops, default planting tool selected
+- Density normalization: the source is a portrait-like game composition while the product is a fixed 16:10 desktop window. Comparison therefore uses equal full-screen content framing rather than pixel-for-pixel scaling.
 
-## Findings
+## Full-view comparison evidence
 
-- No actionable P0/P1/P2 visual or interaction mismatch remains.
-- Fonts and typography: the only transient copy is the compact `你好呀` response, using the existing Apple/PingFang UI stack at a readable 10 px optical weight. No persistent label competes with the cottage.
-- Spacing and layout rhythm: Buddy remains anchored to the front steps without covering the door, cat, mailbox, or cottage silhouette. The former top drag control has been removed, reducing visual clutter.
-- Colors and visual tokens: the transient cream-and-botanical-green speech pill matches the Home interface and existing website palette.
-- Image quality and asset fidelity: cottage, idle Buddy, and waving Buddy are separate production raster assets in the same hand-painted anime style. All three alpha channels were verified. No character or illustration is approximated with CSS, SVG, emoji, or placeholders.
-- Copy and content: `你好呀` appears only during the greeting state; the hover hint now explains both gestures: `轻点回家 · 按住拖动`.
-- Interaction: moving at least 5 px or holding for 180 ms starts native window dragging; a short press still opens Home. Buddy breathes continuously, greets every 9 seconds, and greets immediately on pointer hover.
+The implementation preserves the source's defining composition: cottage on the left, pasture and animals above, cultivated plots in the center, water on the right, Buddy in the working area, and a persistent tool dock along the bottom. It deliberately removes the source's shop, currencies, social, event, map and monetization surfaces to remain inside OneShow Home's companion-product scope.
 
-## Focused Region Comparison
+## Focused comparison evidence
 
-- The complete 310 × 290 widget is itself the focused region. The combined input places the fixed source, new idle state, and new wave state together, so character separation, alignment, and state change are directly visible without another crop.
+- Fishing: the pond is visible and clickable, switches Buddy to a dedicated fishing pose, waits for a catch, updates the fish inventory, and displays a success notice.
+- Animal care: cow, sheep and hen remain visually distinct in the pasture. Feeding Momo updates affection, daily-fed state, Buddy dialogue and the animal tool panel.
+- Planting: all four plots retain visible interaction regions; planted crops show growth scale, mature harvest affordance and offline timers. The lower plot was raised so the persistent tool dock no longer blocks its primary hit target.
 
-## Comparison History
+## Required fidelity surfaces
 
-1. Source capture showed two P1 product issues: Buddy was baked into the cottage bitmap, and dragging depended on a small top `…` handle.
-2. Rebuilt the cottage as a character-free base layer, added separate idle and greeting Buddy assets, and introduced state-driven cross-fade/micro-motion.
-3. Replaced handle-only dragging with a gesture threshold on the entire cottage surface while preserving click-to-enter.
-4. Post-fix evidence `.qa/interactive-house-comparison.png` confirms the fixed character is removed, the greeting state is visually distinct, and the obsolete drag control no longer appears.
+- Fonts and typography: matches the existing OneShow Home compact macOS UI hierarchy. Small labels remain readable at the 1120 × 700 product viewport.
+- Spacing and layout rhythm: persistent room rails, status cards, tool dock and chat dock remain aligned to the current desktop design system. Farm regions do not overflow the window.
+- Colors and visual tokens: warm cream surfaces, sage actions, terracotta roofs and sky-blue water match both the source direction and existing Home scenes.
+- Image quality and asset fidelity: the farm scene, animal trio and fishing Buddy are full raster assets generated in the same hand-painted anime style. Transparent assets have clean alpha edges and no visible chroma-key halo at product scale.
+- Copy and content: language is companion-oriented and action-specific. Commercial and social copy from the source was intentionally omitted.
 
-## Implementation Checklist
+## Comparison history
 
-- [x] Buddy is independent from the cottage artwork.
-- [x] Idle breathing and greeting states animate automatically.
-- [x] Hovering the cottage triggers an immediate Buddy response.
-- [x] The complete cottage surface supports native dragging.
-- [x] Short press still enters Home without triggering a drag.
-- [x] Frontend lint, typecheck, 19 tests, production build, Rust formatting, and 4 Rust tests pass.
-- [x] Unsigned macOS `.app` bundle builds successfully.
+### Iteration 1
 
-## Follow-up Polish
+- [P2] Buddy dialogue obscured part of the animal group.
+- [P2] The fourth plot's interaction center sat too close to the bottom tool dock.
+- Fixes: moved the farm dialogue bubble to the open left path and raised the fourth plot interaction center from 79% to 72%.
+- Post-fix evidence: `.qa/farm-implementation.png` shows all animals unobstructed and the lower crop/plot affordance above the dock.
 
-- P3: a future animation pack can add blinking, reading, watering, sleep, and weather-specific actions while keeping the same sprite anchor and character scale.
+### Final pass
+
+No actionable P0, P1 or P2 differences remain. The lower interface density versus the reference is an intentional desktop-companion constraint, not unfinished fidelity.
+
+## Primary interactions tested
+
+- Select planting mode and interact with a plot.
+- Select fishing mode, click the pond, catch a fish and update inventory.
+- Select animal mode, feed Momo and update affection/daily state.
+- Switch between planting, fishing and animal tool panels.
+
+## Follow-up polish
+
+- [P3] Add one alternate idle pose per animal in a later animation pass.
+- [P3] Add seasonal farm background variants after the core Home loop is stable.
 
 final result: passed

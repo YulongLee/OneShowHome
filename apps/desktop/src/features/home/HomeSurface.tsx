@@ -47,7 +47,7 @@ const rooms: Array<{
   { id: "living_room", label: "客厅", icon: House },
   { id: "kitchen", label: "厨房", icon: CookingPot },
   { id: "bedroom", label: "卧室", icon: Bed },
-  { id: "garden", label: "花园", icon: FlowerLotus },
+  { id: "garden", label: "农场", icon: FlowerLotus },
 ];
 
 const quickActions: Array<{
@@ -65,7 +65,7 @@ const roomCopy = {
   living_room: { title: "客厅", note: "适合聊天、读书和休息" },
   kitchen: { title: "厨房", note: "一起准备今天的小餐点" },
   bedroom: { title: "卧室", note: "让 Buddy 安静恢复精力" },
-  garden: { title: "花园", note: "照顾植物，看看它们的变化" },
+  garden: { title: "农场", note: "种植、钓鱼，也照顾新的动物朋友" },
 } as const;
 
 const moodLabels = {
@@ -78,7 +78,7 @@ const activityLines = {
   reading: "这里很安静，正好可以一起读几页书。",
   cooking: "厨房里有暖暖的香气，要一起准备晚餐吗？",
   sleeping: "我先安静睡一会儿，醒来再陪你。",
-  gardening: "植物今天也在努力长大呢。",
+  gardening: "田里的植物和牧场里的朋友今天都很有精神。",
   thinking: "我在整理今天的小小心事。",
 } as const;
 

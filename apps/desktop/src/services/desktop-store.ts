@@ -75,6 +75,17 @@ export type GardenState = {
   level: number;
   xp: number;
   nextLevelXp: number;
+  animals: Array<{
+    animalId: "momo" | "yuki" | "koko";
+    kind: "cow" | "sheep" | "chicken";
+    affection: number;
+    lastFedDate: string | null;
+  }>;
+  fishInventory: Array<{
+    fishId: "sunfish" | "carp" | "bluegill";
+    quantity: number;
+  }>;
+  lastFishedAt: number | null;
 };
 
 export type DesktopSnapshot = {
@@ -137,6 +148,19 @@ export const waterGardenPlot = (plotId: number) =>
 export const harvestGardenPlot = (plotId: number) =>
   invoke<DesktopSnapshot>("harvest_garden_plot", {
     plotId,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const feedFarmAnimal = (animalId: "momo" | "yuki" | "koko") =>
+  invoke<DesktopSnapshot>("feed_farm_animal", {
+    animalId,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const fishAtPond = () =>
+  invoke<DesktopSnapshot>("fish_at_pond", {
     nowMs: Date.now(),
     localDate: localDate(),
   });

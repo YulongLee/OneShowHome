@@ -145,6 +145,25 @@ fn harvest_garden_plot(
 }
 
 #[tauri::command]
+fn feed_farm_animal(
+    store: State<'_, DesktopStore>,
+    animal_id: String,
+    now_ms: i64,
+    local_date: String,
+) -> Result<DesktopSnapshot, String> {
+    store.feed_farm_animal(&animal_id, now_ms, &local_date)
+}
+
+#[tauri::command]
+fn fish_at_pond(
+    store: State<'_, DesktopStore>,
+    now_ms: i64,
+    local_date: String,
+) -> Result<DesktopSnapshot, String> {
+    store.fish_at_pond(now_ms, &local_date)
+}
+
+#[tauri::command]
 fn claim_daily_task(
     store: State<'_, DesktopStore>,
     task_id: String,
@@ -336,6 +355,8 @@ pub fn run() {
             plant_garden_crop,
             water_garden_plot,
             harvest_garden_plot,
+            feed_farm_animal,
+            fish_at_pond,
             claim_daily_task,
             change_buddy_room,
             add_desktop_memory,

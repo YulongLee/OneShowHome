@@ -35,6 +35,9 @@ const snapshot: DesktopSnapshot = {
     level: 1,
     xp: 0,
     nextLevelXp: 60,
+    animals: [],
+    fishInventory: [],
+    lastFishedAt: null,
   },
   settings: { soundEnabled: true },
 };
