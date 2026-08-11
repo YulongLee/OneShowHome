@@ -2061,8 +2061,276 @@ html[data-surface="main"] #root {
 }
 
 .room-stage + .home-titlebar ~ .buddy-bubble {
-  top: 29%;
-  left: 56%;
+  top: 76px;
+  left: 50%;
+}
+
+/* 2.5D isometric interior world */
+.isometric-room {
+  background: radial-gradient(
+    circle at 50% 40%,
+    #27342b 0%,
+    #151b18 62%,
+    #0c100e 100%
+  );
+  cursor: crosshair;
+}
+
+.isometric-room .home-scene {
+  object-fit: cover;
+  user-select: none;
+}
+
+.isometric-room + .home-titlebar .brand-lockup {
+  color: #fff8df;
+  text-shadow: 0 2px 8px rgb(0 0 0 / 48%);
+}
+
+.isometric-room + .home-titlebar .home-kicker {
+  border-left-color: rgb(255 248 223 / 35%);
+  color: rgb(255 248 223 / 76%);
+}
+
+.room-floor-light {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at 56% 67%,
+    rgb(255 226 151 / 12%),
+    transparent 36%
+  );
+  pointer-events: none;
+  animation: room-light-breathe 6s ease-in-out infinite alternate;
+}
+
+.room-view-bedroom .room-floor-light {
+  background:
+    radial-gradient(
+      ellipse at 58% 64%,
+      rgb(255 205 117 / 15%),
+      transparent 34%
+    ),
+    linear-gradient(135deg, rgb(44 61 96 / 9%), transparent 54%);
+}
+
+.room-view-kitchen .room-floor-light {
+  background: radial-gradient(
+    ellipse at 48% 63%,
+    rgb(255 233 172 / 16%),
+    transparent 40%
+  );
+}
+
+.room-ambient-motion {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.room-ambient-motion i {
+  position: absolute;
+  top: 27%;
+  left: 48%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgb(255 235 164 / 75%);
+  box-shadow: 0 0 8px rgb(255 218 118 / 70%);
+  animation: room-dust-float 7s ease-in-out infinite;
+}
+
+.room-ambient-motion i:nth-child(2) {
+  top: 36%;
+  left: 57%;
+  width: 3px;
+  height: 3px;
+  animation-delay: -1.7s;
+}
+
+.room-ambient-motion i:nth-child(3) {
+  top: 42%;
+  left: 68%;
+  animation-delay: -3.4s;
+}
+
+.room-ambient-motion i:nth-child(4) {
+  top: 50%;
+  left: 43%;
+  width: 2px;
+  height: 2px;
+  animation-delay: -4.8s;
+}
+
+.room-ambient-motion i:nth-child(5) {
+  top: 31%;
+  left: 76%;
+  width: 3px;
+  height: 3px;
+  animation-delay: -5.9s;
+}
+
+.room-view-bedroom .room-ambient-motion i {
+  background: rgb(192 218 255 / 72%);
+  box-shadow: 0 0 9px rgb(131 174 255 / 70%);
+}
+
+.room-walk-marker {
+  position: absolute;
+  z-index: 6;
+  display: grid;
+  width: 30px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 70%);
+  border-radius: 50%;
+  color: #fff8cf;
+  background: rgb(91 126 65 / 76%);
+  box-shadow: 0 5px 14px rgb(48 35 20 / 28%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-10deg);
+  animation: room-marker-pulse 650ms ease-in-out infinite alternate;
+}
+
+.room-walk-marker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.isometric-buddy {
+  width: clamp(112px, 13vw, 156px);
+  transform: translate(-50%, -100%);
+  transform-origin: 50% 100%;
+}
+
+.isometric-buddy.is-facing-left {
+  transform: translate(-50%, -100%) scaleX(-1);
+}
+
+.isometric-buddy.is-facing-left .action-sparkles {
+  transform: scaleX(-1);
+}
+
+.isometric-buddy.is-sleeping-pose {
+  width: clamp(150px, 17vw, 196px);
+  transform: translate(-50%, -68%);
+}
+
+.isometric-buddy.is-sleeping-pose.is-facing-left {
+  transform: translate(-50%, -68%) scaleX(-1);
+}
+
+.room-buddy-walk-cycle {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  background-size: 200% 200%;
+  animation:
+    room-walk-sprite 520ms steps(1) infinite,
+    room-walk-bob 260ms ease-in-out infinite alternate;
+}
+
+.isometric-buddy:not(.is-walking)::after {
+  position: absolute;
+  right: 22%;
+  bottom: 2%;
+  left: 22%;
+  height: 10%;
+  border-radius: 50%;
+  background: rgb(39 42 27 / 22%);
+  filter: blur(5px);
+  content: "";
+  transform: translateY(4px);
+}
+
+.room-move-help {
+  position: absolute;
+  z-index: 4;
+  bottom: 86px;
+  left: 50%;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 7px 11px;
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: 999px;
+  color: rgb(255 252 232 / 86%);
+  background: rgb(34 45 33 / 64%);
+  box-shadow: 0 8px 26px rgb(15 18 14 / 24%);
+  font-size: 8px;
+  font-weight: 700;
+  pointer-events: none;
+  transform: translateX(-50%);
+  backdrop-filter: blur(12px);
+}
+
+.room-move-help svg {
+  width: 13px;
+  height: 13px;
+}
+
+@keyframes room-light-breathe {
+  from {
+    opacity: 0.72;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes room-dust-float {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translate(0, 10px) scale(0.7);
+  }
+  30%,
+  70% {
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(18px, -22px) scale(1.15);
+  }
+}
+
+@keyframes room-marker-pulse {
+  from {
+    opacity: 0.62;
+    transform: translate(-50%, -50%) rotate(-10deg) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-10deg) scale(1.06);
+  }
+}
+
+@keyframes room-walk-sprite {
+  0% {
+    background-position: 0 0;
+  }
+  25% {
+    background-position: 100% 0;
+  }
+  50% {
+    background-position: 0 100%;
+  }
+  75%,
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes room-walk-bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-3px);
+  }
 }
 
 /* Living garden */

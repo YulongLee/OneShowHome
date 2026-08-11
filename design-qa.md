@@ -1,74 +1,63 @@
-# OneShow Home Farm Design QA
+# OneShow Home 2.5D Rooms — Design QA
 
 ## Evidence
 
-- source visual truth path: `/var/folders/2c/sdg0hxmx3b5_x84y09b7hk1w0000gn/T/codex-clipboard-d463e843-f39d-47a1-a382-f30e4a7eda39.png`
-- implementation screenshot path: `/tmp/oneshow-commercial-farm-final.png`
-- full-view comparison evidence: `/tmp/oneshow-commercial-farm-comparison-final.png`
-- focused region comparison evidence: `/tmp/oneshow-commercial-farm-focused-final.png`
-- viewport: macOS native application window, `1120 x 700` CSS pixels, 16:10
-- source dimensions: `1448 x 1086` pixels, 4:3 visual reference
-- implementation dimensions: `1120 x 700` pixels, captured at native 1x density
-- density normalization: both images were resized to equal `720 x 540` evidence panels with cover cropping for the full-view comparison; HUD and central-world areas were also independently cropped and normalized for focused comparison
-- state: spring daytime, sunny, 08:34 game time, farm view, watering tool selected, no modal
+- source visual truth paths:
+  - `apps/desktop/src/assets/house/living-room-isometric-v1.png`
+  - `apps/desktop/src/assets/house/kitchen-isometric-v1.png`
+  - `apps/desktop/src/assets/house/bedroom-isometric-v1.png`
+- implementation screenshots:
+  - `/tmp/oneshow-room-final-living.png`
+  - `/tmp/oneshow-room-final-kitchen.png`
+  - `/tmp/oneshow-room-final-bedroom.png`
+- full-view comparison evidence: `/tmp/oneshow-isometric-rooms-final.png`
+- movement-state evidence: `/tmp/oneshow-room-walk-mid.png`
+- viewport: macOS native application window, `1120 x 700` CSS pixels
+- source assets: `1586 x 992` pixels; implementation captures: `1120 x 700` pixels; both approximately 16:10 and compared at native aspect ratio
+- state: living room, kitchen, and bedroom; night local time; no modal; indoor-only launch scope
 
 ## Findings
 
 - No actionable P0, P1, or P2 findings remain.
-- [P3] The reference has a denser fenced pasture and more finely illustrated ground transitions. The implementation deliberately uses independently animated buildings, trees, crops, animals, water, weather, player, and Buddy layers, so some transitions are less painterly than a single flattened illustration. This does not block the commercial desktop MVP.
-- [P3] The task panel occupies slightly more vertical space than the reference. It remains readable, does not cover the player interaction area, and is suitable for dynamic task copy.
+- [P3] The generated cutaway rooms use a dark outer matte. It creates a consistent game-stage boundary and does not reduce room readability.
+- [P3] Action poses use the current Buddy illustration set, while the walk cycle has a slightly different rendering finish. A unified character atlas can be produced in a later character-art pass.
 
-## Required Fidelity Surfaces
+## Fidelity Surfaces
 
-- Fonts and typography: clear display/body hierarchy, stable wrapping, appropriate small-text weight, and no truncation in the captured desktop viewport. Chinese system fallbacks differ from the illustrated reference lettering but remain visually coherent.
-- Spacing and layout rhythm: profile, time/weather, navigation, task board, Buddy notice, world, and bottom tools form a consistent HUD frame. The 16:10 adaptation preserves the reference hierarchy without clipping persistent controls.
-- Colors and visual tokens: warm cream HUD surfaces, moss green active states, dark translucent utility panels, sunny greens, orange roofs, and blue water map closely to the target palette with sufficient contrast.
-- Image quality and asset fidelity: all prominent world imagery uses raster artwork rather than CSS/SVG substitutes. Terrain, vista, environment atlas, crops, animals, pet, player, and Buddy are composited as separate entities. No placeholder art is visible.
-- Copy and content: farm copy is concise and product-specific. Goals, Buddy status, time, season, weather, tool names, interaction labels, and inventory counts are coherent in the standalone app.
-- Icons and affordances: one consistent Phosphor icon family is used for HUD controls and tools; selected state, counts, labels, and practical click targets are visible.
-- States and accessibility: native buttons retain semantic labels, active tool state is visually distinct, reduced-motion support remains available in CSS, and key controls are keyboard-reachable through their button semantics.
+- typography: clear hierarchy and readable Chinese labels; title contrast was raised for the dark isometric stage.
+- spacing/layout: all three rooms preserve the same HUD frame, 16:10 composition, navigation rails, chat dock, and interaction density.
+- colors/tokens: warm cream, wood, sage green, amber light, and muted night blue remain consistent across all rooms.
+- image quality: every room uses a production raster background with one shared orthographic 45-degree projection; no CSS-drawn substitute scenery is visible.
+- copy/content: farm, planting, fishing, and animal-care entry copy are removed from the launch UI; room labels and tasks are indoor-specific.
+- behavior: floor clicks use constrained paths, long routes pass through a safe hub, Buddy faces the movement direction, and interactions execute only after arrival.
+- accessibility: room and object buttons retain semantic labels, active states are visible, and persistent controls do not clip at `1120 x 700`.
 
 ## Comparison History
 
 ### Iteration 1
 
-- Earlier findings: the scene inherited the Mac's real midnight state, appeared excessively dark, and the farm felt empty.
-- Fixes made: introduced an independent 08:30 game clock, derived world lighting from game time, removed the parent night overlay, and added independent sky, cloud, river-light, tree, smoke, animal, pet, and crop motion layers.
-- Post-fix evidence: `/tmp/oneshow-commercial-farm-v2.png` and `/tmp/oneshow-commercial-farm-comparison-v2.png`.
+- finding: previous interior assets were front-facing one-point-perspective illustrations, not playable 2.5D maps.
+- fix: created three new commercial anime cutaway room assets using a shared orthographic 45-degree view and open walkable floor layout.
+- evidence: the three source visual truth paths above.
 
 ### Iteration 2
 
-- Earlier findings: field density, edge vegetation, distant scenery, and the task board still drifted from the commercial reference.
-- Fixes made: added a parallax vista layer, denser independent tree entities, six crop fields with per-plant sway, brighter river integration, and a compact dynamic goal board.
-- Post-fix evidence: `/tmp/oneshow-commercial-farm-v3b.png`.
+- finding: Buddy appeared too small; dark-stage title copy had low contrast; the movement hint collided with the chat dock; old users could retain a farm task.
+- fix: increased character scale, raised title contrast, moved the hint above chat, migrated existing farm tasks to indoor tasks, and restricted release navigation to three rooms.
+- evidence: `/tmp/oneshow-isometric-living-final.png`, `/tmp/oneshow-isometric-kitchen.png`, and `/tmp/oneshow-isometric-bedroom.png`.
 
 ### Iteration 3
 
-- Earlier findings: final crop coverage and build capture were stale after the last scene composition changes.
-- Fixes made: completed the additional crop fields, formatted and rebuilt the native app, recaptured the exact `1120 x 700` farm window, and compared both full view and focused HUD/world regions.
-- Post-fix evidence: `/tmp/oneshow-commercial-farm-final.png`, `/tmp/oneshow-commercial-farm-comparison-final.png`, and `/tmp/oneshow-commercial-farm-focused-final.png`.
+- finding: the kitchen spawn could overlap dining furniture and a sleeping pose could appear on open floor.
+- fix: moved the kitchen spawn to the central clear floor, added a right-side kitchen collision limit, and positioned sleeping state at the bedroom bed.
+- post-fix evidence: `/tmp/oneshow-isometric-rooms-final.png` and `/tmp/oneshow-room-walk-mid.png`.
 
-## Primary Interactions Tested
+## Verification
 
-- Open desktop house and enter OneShow Home.
-- Restore and raise the Farm scene in the native macOS app.
-- Click the world/field and confirm semantic farm interaction remains active.
-- Verify HUD, task board, tool dock, animal area, crop plots, player, and Buddy render together without overlap or clipping.
-- Automated verification: 9 test files and 31 tests passed; type checking, linting, web build, and macOS application bundle build passed.
-
-## Implementation Checklist
-
-- [x] Commercial anime visual direction
-- [x] Independent dynamic scene entities
-- [x] Game-time-driven lighting and weather
-- [x] Player path movement and walk state
-- [x] Buddy autonomous movement and routine
-- [x] Dynamic farm goals and interactive tool dock
-- [x] Native macOS build and visual comparison
-
-## Follow-up Polish
-
-- P3: introduce a larger high-resolution player/Buddy walk atlas for sharper character silhouettes at Retina scale.
-- P3: add seasonal fence and ground-edge variants while keeping every world entity independently animated.
+- 10 frontend test files, 34 tests passed.
+- 12 Rust tests passed.
+- TypeScript type checking, ESLint, Rust formatting, and Clippy passed.
+- Native macOS release bundle built successfully.
+- Primary interactions tested: enter Home, switch all three rooms, click floor to walk, capture mid-walk animation, and activate room object hotspots.
 
 final result: passed

@@ -5,7 +5,6 @@ import {
   Brain,
   ChatCircleDots,
   CookingPot,
-  FlowerLotus,
   GearSix,
   Heart,
   House,
@@ -24,7 +23,6 @@ import {
   applyBuddyAction,
   changeBuddyRoom,
   loadDesktopSnapshot,
-  type BuddyState,
   type DesktopSnapshot,
 } from "../../services/desktop-store";
 import {
@@ -33,22 +31,33 @@ import {
   type ModelSettings,
 } from "../../services/model-runtime";
 import { BuddyOnboarding } from "../onboarding/BuddyOnboarding";
-import { GardenStage } from "../garden/GardenStage";
 import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
 import { HomeDialog, type HomeDialogKind } from "./HomeDialogs";
 import { DailyTaskBoard } from "./DailyTaskBoard";
 import { RoomStage, type RoomHotspot } from "./RoomStage";
+import type { LaunchRoom } from "./room-world-engine";
 
 const rooms: Array<{
-  id: BuddyState["location"];
+  id: LaunchRoom;
   label: string;
   icon: typeof House;
 }> = [
   { id: "living_room", label: "客厅", icon: House },
   { id: "kitchen", label: "厨房", icon: CookingPot },
   { id: "bedroom", label: "卧室", icon: Bed },
-  { id: "garden", label: "农场", icon: FlowerLotus },
 ];
+
+const launchTaskActions = new Set([
+  "rest",
+  "read",
+  "fireplace",
+  "cook",
+  "prepare",
+  "wash",
+  "sleep",
+  "write",
+  "tidy",
+]);
 
 const quickActions: Array<{
   id: HomeDialogKind;
@@ -65,7 +74,6 @@ const roomCopy = {
   living_room: { title: "客厅", note: "适合聊天、读书和休息" },
   kitchen: { title: "厨房", note: "一起准备今天的小餐点" },
   bedroom: { title: "卧室", note: "让 Buddy 安静恢复精力" },
-  garden: { title: "农场", note: "种植、钓鱼，也照顾新的动物朋友" },
 } as const;
 
 const moodLabels = {
@@ -78,7 +86,7 @@ const activityLines = {
   reading: "这里很安静，正好可以一起读几页书。",
   cooking: "厨房里有暖暖的香气，要一起准备晚餐吗？",
   sleeping: "我先安静睡一会儿，醒来再陪你。",
-  gardening: "田里的植物和牧场里的朋友今天都很有精神。",
+  gardening: "我刚从外面回来，现在想在小屋里陪陪你。",
   thinking: "我在整理今天的小小心事。",
 } as const;
 
@@ -92,9 +100,6 @@ const actionLines: Record<string, string> = {
   sleep: "晚安，我先做一个关于小屋的好梦。",
   write: "今天的心情已经好好写下来了。",
   tidy: "房间整齐以后，好像也多了一点呼吸的空间。",
-  water: "你听，花儿喝到水以后好像在说谢谢。",
-  harvest: "今天收获得真不错，晚上可以做新鲜料理了。",
-  greenhouse: "幼苗又长高了一点点，我们明天再来看它。",
 };
 
 export function HomeSurface() {
@@ -116,7 +121,11 @@ export function HomeSurface() {
 
   useEffect(() => {
     void loadDesktopSnapshot()
-      .then((next) => {
+      .then(async (loaded) => {
+        const next =
+          loaded.state?.location === "garden"
+            ? await changeBuddyRoom("living_room")
+            : loaded;
         setSnapshot(next);
         if (next.state) setBuddyLine(activityLines[next.state.activity]);
       })
@@ -149,8 +158,19 @@ export function HomeSurface() {
 
   const state = snapshot?.state;
   const profile = snapshot?.profile;
-  const room = state?.location ?? "living_room";
+  const room: LaunchRoom =
+    state?.location === "kitchen" || state?.location === "bedroom"
+      ? state.location
+      : "living_room";
   const roomInfo = roomCopy[room];
+  const launchSnapshot = snapshot
+    ? {
+        ...snapshot,
+        dailyTasks: snapshot.dailyTasks.filter((task) =>
+          launchTaskActions.has(task.action),
+        ),
+      }
+    : null;
   const isNight = clock.getHours() < 7 || clock.getHours() >= 19;
   const formattedTime = useMemo(
     () =>
@@ -172,7 +192,7 @@ export function HomeSurface() {
     }
   };
 
-  const changeRoom = async (nextRoom: BuddyState["location"]) => {
+  const changeRoom = async (nextRoom: LaunchRoom) => {
     if (nextRoom === room) return;
     setNotice("Buddy 正在换个房间…");
     try {
@@ -280,23 +300,16 @@ export function HomeSurface() {
 
   return (
     <main className={`home-shell room-${room}${isNight ? " is-night" : ""}`}>
-      {room === "garden" ? (
-        <GardenStage
-          onBuddyLine={setBuddyLine}
-          onNotice={setNotice}
-          onSnapshot={setSnapshot}
-          snapshot={snapshot}
-        />
-      ) : (
-        <RoomStage
-          activeAction={activeAction}
-          busyAction={busyAction}
-          objectStates={snapshot.objectStates}
-          onInteract={(hotspot) => void interact(hotspot)}
-          room={room}
-          state={state}
-        />
-      )}
+      <RoomStage
+        activeAction={activeAction}
+        busyAction={busyAction}
+        key={room}
+        objectStates={snapshot.objectStates}
+        onInteract={(hotspot) => void interact(hotspot)}
+        onMove={() => setActiveAction(null)}
+        room={room}
+        state={state}
+      />
 
       <header className="home-titlebar">
         <div className="brand-lockup">
@@ -376,7 +389,7 @@ export function HomeSurface() {
       <DailyTaskBoard
         onNotice={setNotice}
         onSnapshot={setSnapshot}
-        snapshot={snapshot}
+        snapshot={launchSnapshot ?? snapshot}
       />
 
       <section aria-live="polite" className="buddy-bubble">

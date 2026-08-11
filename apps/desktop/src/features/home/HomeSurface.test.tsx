@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
@@ -116,6 +116,9 @@ describe("HomeSurface", () => {
       screen.getByRole("textbox", { name: "和 Buddy 聊聊" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "厨房" })).toBeEnabled();
+    expect(
+      screen.queryByRole("button", { name: "农场" }),
+    ).not.toBeInTheDocument();
   });
 
   it("changes rooms and runs a Buddy interaction", async () => {
@@ -132,7 +135,7 @@ describe("HomeSurface", () => {
     await user.click(
       await screen.findByRole("button", { name: "炉灶：做一道暖心料理" }),
     );
-    expect(applyBuddyAction).toHaveBeenCalledWith("cook");
+    await waitFor(() => expect(applyBuddyAction).toHaveBeenCalledWith("cook"));
   });
 
   it("returns to the desktop house", async () => {

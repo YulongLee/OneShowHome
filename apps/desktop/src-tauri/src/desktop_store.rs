@@ -1207,7 +1207,7 @@ fn snapshot_from_connection(connection: &Connection) -> Result<DesktopSnapshot, 
 fn ensure_daily_tasks(
     connection: &Connection,
     local_date: &str,
-    now_ms: i64,
+    _now_ms: i64,
 ) -> Result<(), String> {
     if local_date.len() != 10
         || !local_date
@@ -1215,16 +1215,6 @@ fn ensure_daily_tasks(
             .all(|character| character.is_ascii_digit() || character == '-')
     {
         return Err("本地日期格式不正确".to_string());
-    }
-    let existing_count: i64 = connection
-        .query_row(
-            "SELECT COUNT(*) FROM daily_tasks WHERE local_date=?1",
-            [local_date],
-            |row| row.get(0),
-        )
-        .map_err(|error| error.to_string())?;
-    if existing_count > 0 {
-        return Ok(());
     }
     let home_templates = [
         ("read", "午后阅读", "在客厅陪 Buddy 读一次书", 1, 12),
@@ -1238,7 +1228,27 @@ fn ensure_daily_tasks(
         ("tidy", "整理房间", "整理一次卧室衣柜", 1, 10),
     ];
     let seed = local_date.bytes().map(usize::from).sum::<usize>();
-    for step in [0, 4] {
+    let existing_count: i64 = connection
+        .query_row(
+            "SELECT COUNT(*) FROM daily_tasks WHERE local_date=?1",
+            [local_date],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
+    if existing_count > 0 {
+        let (action, title, description, target, reward) =
+            home_templates[(seed + 7) % home_templates.len()];
+        connection
+            .execute(
+                "UPDATE daily_tasks SET action=?2, title=?3, description=?4,
+                 target=?5, reward=?6 WHERE local_date=?1 AND
+                 action IN ('plant', 'water', 'harvest', 'fish', 'feed')",
+                params![local_date, action, title, description, target, reward],
+            )
+            .map_err(|error| error.to_string())?;
+        return Ok(());
+    }
+    for step in [0, 4, 7] {
         let (action, title, description, target, reward) =
             home_templates[(seed + step) % home_templates.len()];
         connection
@@ -1258,52 +1268,6 @@ fn ensure_daily_tasks(
             )
             .map_err(|error| error.to_string())?;
     }
-    let ready_count: i64 = connection
-        .query_row(
-            "SELECT COUNT(*) FROM garden_plots WHERE crop_id IS NOT NULL AND ready_at<=?1",
-            [now_ms],
-            |row| row.get(0),
-        )
-        .map_err(|error| error.to_string())?;
-    let empty_count: i64 = connection
-        .query_row(
-            "SELECT COUNT(*) FROM garden_plots WHERE crop_id IS NULL",
-            [],
-            |row| row.get(0),
-        )
-        .map_err(|error| error.to_string())?;
-    let hungry_count: i64 = connection
-        .query_row(
-            "SELECT COUNT(*) FROM farm_animals WHERE last_fed_date IS NULL OR last_fed_date<>?1",
-            [local_date],
-            |row| row.get(0),
-        )
-        .map_err(|error| error.to_string())?;
-    let (action, title, description, reward) = if ready_count > 0 {
-        ("harvest", "小小收获", "从菜园收获一份成熟作物", 15)
-    } else {
-        match seed % 3 {
-            1 => ("fish", "池塘时光", "和 Buddy 在池塘钓一条鱼", 15),
-            2 if hungry_count > 0 => ("feed", "动物早餐", "给农场动物喂一次食", 12),
-            _ if empty_count > 0 => ("plant", "播下一颗种子", "在空花圃种下一种喜欢的作物", 12),
-            _ => ("water", "花儿喝水", "给生长中的作物浇一次水", 12),
-        }
-    };
-    connection
-        .execute(
-            "INSERT OR IGNORE INTO daily_tasks
-             (id, local_date, action, title, description, target, progress, reward, claimed)
-             VALUES (?1, ?2, ?3, ?4, ?5, 1, 0, ?6, 0)",
-            params![
-                format!("{local_date}-garden"),
-                local_date,
-                action,
-                title,
-                description,
-                reward
-            ],
-        )
-        .map_err(|error| error.to_string())?;
     Ok(())
 }
 
