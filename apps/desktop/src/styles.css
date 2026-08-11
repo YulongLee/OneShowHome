@@ -2796,8 +2796,9 @@ html[data-surface="main"] #root {
 }
 
 .farm-buddy {
+  --buddy-facing: 1;
   position: absolute;
-  z-index: 3;
+  z-index: 6;
   top: 41%;
   left: 43%;
   width: 19%;
@@ -2822,18 +2823,26 @@ html[data-surface="main"] #root {
 }
 
 .farm-buddy img {
-  --buddy-facing: 1;
   width: 100%;
   animation: farm-buddy-breathe 4s ease-in-out infinite;
 }
 
-.farm-buddy.is-facing-left img {
+.farm-buddy.is-facing-left {
   --buddy-facing: -1;
 }
 
-.farm-buddy.is-moving img,
-.farm-buddy.is-moving.is-acting img {
-  animation: farm-buddy-walk 420ms ease-in-out infinite;
+.farm-buddy-walk-cycle {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 200% 200%;
+  transform: scaleX(var(--buddy-facing));
+  transform-origin: center bottom;
+  animation:
+    farm-walk-sprite 520ms linear infinite,
+    farm-walk-bob 260ms ease-in-out infinite alternate;
 }
 
 .farm-buddy.is-acting img {
@@ -3113,13 +3122,31 @@ html[data-surface="main"] #root {
   }
 }
 
-@keyframes farm-buddy-walk {
+@keyframes farm-walk-sprite {
   0%,
-  100% {
-    transform: scaleX(var(--buddy-facing)) translateY(0) rotate(-1deg);
+  24.99% {
+    background-position: 0 0;
   }
-  50% {
-    transform: scaleX(var(--buddy-facing)) translateY(-7px) rotate(1deg);
+  25%,
+  49.99% {
+    background-position: 100% 0;
+  }
+  50%,
+  74.99% {
+    background-position: 0 100%;
+  }
+  75%,
+  100% {
+    background-position: 100% 100%;
+  }
+}
+
+@keyframes farm-walk-bob {
+  from {
+    transform: scaleX(var(--buddy-facing)) translateY(0);
+  }
+  to {
+    transform: scaleX(var(--buddy-facing)) translateY(-4px);
   }
 }
 

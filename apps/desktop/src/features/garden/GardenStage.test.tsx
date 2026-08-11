@@ -82,10 +82,12 @@ describe("GardenStage game movement", () => {
     const buddy = container.querySelector(".farm-buddy");
     expect(buddy).toHaveClass("is-moving", "is-facing-right");
     expect(buddy).toHaveStyle({ left: "72%", top: "62.5%" });
+    expect(container.querySelector(".farm-buddy-walk-cycle")).not.toBeNull();
     expect(onBuddyLine).toHaveBeenCalledWith("我过去看看，等我一下。");
 
-    await act(async () => vi.advanceTimersByTimeAsync(1_500));
+    await act(async () => vi.advanceTimersByTimeAsync(2_000));
     expect(buddy).not.toHaveClass("is-moving");
+    expect(container.querySelector(".farm-buddy-walk-cycle")).toBeNull();
     expect(onBuddyLine).toHaveBeenLastCalledWith(
       "到了。这里的风景好像也有一点不一样。",
     );

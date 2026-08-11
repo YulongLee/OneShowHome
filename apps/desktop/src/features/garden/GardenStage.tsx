@@ -20,7 +20,8 @@ import {
 } from "react";
 import animalTrio from "../../assets/farm/animal-trio.png";
 import buddyFishing from "../../assets/farm/buddy-fishing.png";
-import buddyWalking from "../../assets/farm/buddy-walking.png";
+import buddyStanding from "../../assets/farm/buddy-standing.png";
+import buddyWalkCycle from "../../assets/farm/buddy-walk-cycle.png";
 import farmScene from "../../assets/farm/farm-scene.png";
 import cropCarrot from "../../assets/garden/crop-carrot.png";
 import cropLavender from "../../assets/garden/crop-lavender.png";
@@ -41,7 +42,7 @@ import {
 } from "../../services/desktop-store";
 
 type FarmMode = "plant" | "fish" | "animal";
-type BuddyPose = "walking" | "gardening" | "fishing";
+type BuddyPose = "idle" | "gardening" | "fishing";
 type FarmPoint = { left: number; top: number };
 type CropMeta = {
   id: GardenCropId;
@@ -146,7 +147,7 @@ export function GardenStage({
   const [selectedCrop, setSelectedCrop] = useState<GardenCropId>("tomato");
   const [selectedPlotId, setSelectedPlotId] = useState<number | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [buddyPose, setBuddyPose] = useState<BuddyPose>("walking");
+  const [buddyPose, setBuddyPose] = useState<BuddyPose>("idle");
   const [buddyPosition, setBuddyPosition] = useState<FarmPoint>({
     left: 43,
     top: 41,
@@ -198,10 +199,10 @@ export function GardenStage({
         target.left - buddyPosition.left,
         target.top - buddyPosition.top,
       );
-      const duration = Math.min(1450, Math.max(360, distance * 34));
+      const duration = Math.min(1800, Math.max(620, distance * 42));
       setFacing(target.left < buddyPosition.left ? "left" : "right");
       setWalkDuration(duration);
-      setBuddyPose("walking");
+      setBuddyPose("idle");
       setWalkMarker(target);
       setIsMoving(true);
       setBuddyPosition(target);
@@ -333,7 +334,7 @@ export function GardenStage({
         koko: { left: 75, top: 29 },
       };
       await walkTo(animalTargets[animalId]);
-      setBuddyPose("walking");
+      setBuddyPose("idle");
       const next = await feedFarmAnimal(animalId);
       onSnapshot(next);
       const animal = animalMeta[animalId];
@@ -491,16 +492,23 @@ export function GardenStage({
           } as CSSProperties
         }
       >
-        <img
-          alt=""
-          src={
-            buddyPose === "fishing"
-              ? buddyFishing
-              : buddyPose === "gardening"
-                ? buddyGardening
-                : buddyWalking
-          }
-        />
+        {isMoving ? (
+          <span
+            className="farm-buddy-walk-cycle"
+            style={{ backgroundImage: `url(${buddyWalkCycle})` }}
+          />
+        ) : (
+          <img
+            alt=""
+            src={
+              buddyPose === "fishing"
+                ? buddyFishing
+                : buddyPose === "gardening"
+                  ? buddyGardening
+                  : buddyStanding
+            }
+          />
+        )}
       </div>
 
       {mode === "plant" && selectedPlot?.cropId ? (
