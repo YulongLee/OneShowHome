@@ -49,7 +49,7 @@ afterEach(() => vi.useRealTimers());
 
 describe("GardenStage game movement", () => {
   it("opens the game inventory and exposes the farm toolbelt", () => {
-    render(
+    const { container } = render(
       <GardenStage
         onBuddyLine={vi.fn()}
         onNotice={vi.fn()}
@@ -57,6 +57,13 @@ describe("GardenStage game movement", () => {
         snapshot={snapshot}
       />,
     );
+
+    expect(
+      screen.getByRole("img", {
+        name: "由独立天空、云层、河流、建筑、树木、动物和宠物实时组成的动态农场",
+      }),
+    ).toHaveClass("farm-world-canvas");
+    expect(container.querySelector(".home-scene")).toBeNull();
 
     expect(screen.getByRole("button", { name: "浇水壶" })).toHaveAttribute(
       "aria-pressed",

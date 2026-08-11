@@ -2,7 +2,6 @@ import {
   Axe,
   Backpack,
   Basket,
-  Bird,
   BookOpenText,
   CalendarDots,
   Check,
@@ -38,7 +37,6 @@ import {
 } from "react";
 import buddyStanding from "../../assets/farm/buddy-standing.png";
 import buddyWalkCycle from "../../assets/farm/buddy-walk-cycle.png";
-import farmWorld from "../../assets/farm/farm-world-anime-v3.png";
 import playerStanding from "../../assets/farm/player-standing-v1.png";
 import playerWalkCycle from "../../assets/farm/player-walk-cycle-v1.png";
 import cropCarrot from "../../assets/garden/crop-carrot.png";
@@ -67,6 +65,7 @@ import {
   moveFarmPoint,
   type FarmPoint,
 } from "./farm-world-engine";
+import { FarmWorldCanvas } from "./FarmWorldCanvas";
 
 type FarmMode = "plant" | "fish" | "animal";
 type BuddyPose = "idle" | "gardening" | "fishing";
@@ -567,50 +566,9 @@ export function GardenStage({
       }}
       tabIndex={0}
     >
-      <img alt="OneShow Home 春日农场" className="home-scene" src={farmWorld} />
+      <FarmWorldCanvas world={world} />
       <div aria-hidden="true" className="scene-shade" />
       <div aria-hidden="true" className="farm-light-layer" />
-      {world.weather === "rain" ? (
-        <div aria-hidden="true" className="farm-rain-layer">
-          {Array.from({ length: 24 }, (_, index) => (
-            <i
-              key={index}
-              style={{
-                left: `${(index * 17 + 7) % 100}%`,
-                animationDelay: `${-(index % 8) * 0.14}s`,
-                animationDuration: `${0.72 + (index % 4) * 0.08}s`,
-              }}
-            />
-          ))}
-        </div>
-      ) : null}
-      <div aria-hidden="true" className="farm-ambient-layer">
-        <div className="farm-cloud-shadows">
-          <i />
-          <i />
-        </div>
-        <div className="farm-chimney-smoke">
-          {Array.from({ length: 4 }, (_, index) => (
-            <i key={index} />
-          ))}
-        </div>
-        <div className="farm-river-current">
-          {Array.from({ length: 8 }, (_, index) => (
-            <i key={index} />
-          ))}
-        </div>
-        <div className="farm-leaf-motes">
-          {Array.from({ length: 12 }, (_, index) => (
-            <i key={index} />
-          ))}
-        </div>
-        {world.weather === "sunny" && world.phase !== "night" ? (
-          <div className="farm-bird-flight">
-            <Bird weight="fill" />
-            <Bird weight="fill" />
-          </div>
-        ) : null}
-      </div>
 
       <header className="farm-game-hud">
         <section aria-label="角色状态" className="farm-player-card">
