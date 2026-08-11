@@ -3179,6 +3179,69 @@ html[data-surface="main"] #root {
   background: rgb(255 250 229 / 2%);
 }
 
+.farm-light-layer,
+.farm-rain-layer {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: background 1.4s ease;
+}
+
+.farm-stage.phase-morning .farm-light-layer {
+  background: rgb(255 213 153 / 10%);
+}
+
+.farm-stage.phase-day .farm-light-layer {
+  background: transparent;
+}
+
+.farm-stage.phase-evening .farm-light-layer {
+  background: rgb(185 96 45 / 20%);
+  mix-blend-mode: multiply;
+}
+
+.farm-stage.phase-night .farm-light-layer {
+  background: rgb(15 29 63 / 44%);
+  mix-blend-mode: multiply;
+}
+
+.farm-stage.phase-night .home-scene {
+  filter: saturate(0.82) contrast(1.04) brightness(0.62) !important;
+}
+
+.farm-stage.weather-rain .home-scene {
+  filter: saturate(0.78) contrast(1.02) brightness(0.83) !important;
+}
+
+.farm-stage.season-autumn.phase-day .home-scene,
+.farm-stage.season-autumn.phase-morning .home-scene {
+  filter: sepia(0.12) saturate(1.08) hue-rotate(-9deg) brightness(1.01) !important;
+}
+
+.farm-stage.season-winter.phase-day .home-scene,
+.farm-stage.season-winter.phase-morning .home-scene {
+  filter: saturate(0.72) hue-rotate(8deg) brightness(1.08) !important;
+}
+
+.farm-rain-layer {
+  z-index: 7;
+  background: rgb(74 102 121 / 8%);
+}
+
+.farm-rain-layer i {
+  position: absolute;
+  top: -14%;
+  width: 2px;
+  height: 15%;
+  border-radius: 999px;
+  background: rgb(219 239 255 / 62%);
+  box-shadow: 0 0 3px rgb(255 255 255 / 30%);
+  transform: rotate(14deg);
+  animation: farm-rain-fall 0.8s linear infinite;
+}
+
 .farm-game-hud {
   position: absolute;
   z-index: 12;
@@ -3590,6 +3653,81 @@ html[data-surface="main"] #root {
     contrast(1.02);
 }
 
+.room-garden .farm-player,
+.room-garden .farm-buddy {
+  position: absolute;
+  z-index: 9;
+  pointer-events: none;
+  transform: translate(-50%, -74%);
+  transform-origin: center bottom;
+  transition:
+    top var(--walk-duration, 180ms) linear,
+    left var(--walk-duration, 180ms) linear,
+    width 240ms ease;
+}
+
+.room-garden .farm-player {
+  z-index: 10;
+  filter: drop-shadow(0 5px 3px rgb(37 45 25 / 26%));
+}
+
+.room-garden .farm-player img,
+.room-garden .farm-buddy img {
+  display: block;
+  width: 100%;
+  animation: farm-buddy-breathe 4s ease-in-out infinite;
+}
+
+.room-garden .farm-player.is-facing-left,
+.room-garden .farm-buddy.is-facing-left {
+  --buddy-facing: -1;
+}
+
+.farm-player-walk-cycle,
+.room-garden .farm-buddy-walk-cycle {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 200% 200%;
+  transform: scaleX(var(--buddy-facing, 1));
+  transform-origin: center bottom;
+  animation:
+    farm-walk-sprite 520ms linear infinite,
+    farm-walk-bob 260ms ease-in-out infinite alternate;
+}
+
+.farm-player.pose-gardening img,
+.farm-player.pose-fishing img {
+  animation: home-buddy-action 700ms ease-in-out infinite alternate;
+}
+
+.farm-character-label {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  min-width: max-content;
+  padding: 3px 7px;
+  border: 1px solid rgb(100 74 39 / 22%);
+  border-radius: 999px;
+  color: #553d22;
+  background: rgb(255 247 220 / 90%);
+  box-shadow: 0 3px 10px rgb(38 41 25 / 18%);
+  font-size: 7px;
+  font-weight: 900;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.farm-character-label svg {
+  width: 10px;
+  height: 10px;
+}
+
 .room-garden .farm-detail-card {
   z-index: 13;
   right: 160px;
@@ -3920,6 +4058,15 @@ html[data-surface="main"] #root {
       0 5px 20px rgb(42 34 22 / 28%),
       0 0 0 10px rgb(255 246 205 / 0%);
     transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes farm-rain-fall {
+  from {
+    translate: -8px -18%;
+  }
+  to {
+    translate: 28px 780%;
   }
 }
 

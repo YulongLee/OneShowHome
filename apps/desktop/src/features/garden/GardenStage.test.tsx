@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DesktopSnapshot } from "../../services/desktop-store";
 import { GardenStage } from "./GardenStage";
+import { isFarmPointWalkable } from "./farm-world-engine";
 
 vi.mock("../../services/desktop-store", () => ({
   feedFarmAnimal: vi.fn(),
@@ -71,7 +72,7 @@ describe("GardenStage game movement", () => {
     ).toBeNull();
   });
 
-  it("walks Buddy toward a clicked map position before settling", async () => {
+  it("routes the player around collisions before settling", async () => {
     vi.useFakeTimers();
     const onBuddyLine = vi.fn();
     const { container } = render(
@@ -83,7 +84,7 @@ describe("GardenStage game movement", () => {
       />,
     );
     const walkLayer = screen.getByRole("button", {
-      name: "点击农场地面移动 Buddy",
+      name: "点击农场地面移动角色",
     });
     vi.spyOn(walkLayer, "getBoundingClientRect").mockReturnValue({
       bottom: 800,
@@ -103,17 +104,24 @@ describe("GardenStage game movement", () => {
       clientY: 500,
     });
 
-    const buddy = container.querySelector(".farm-buddy");
-    expect(buddy).toHaveClass("is-moving", "is-facing-right");
-    expect(buddy).toHaveStyle({ left: "72%", top: "62.5%" });
-    expect(container.querySelector(".farm-buddy-walk-cycle")).not.toBeNull();
-    expect(onBuddyLine).toHaveBeenCalledWith("我过去看看，等我一下。");
+    const player = container.querySelector<HTMLElement>(".farm-player");
+    expect(player).toHaveClass("is-moving");
+    expect(container.querySelector(".farm-player-walk-cycle")).not.toBeNull();
+    expect(onBuddyLine).toHaveBeenCalledWith(
+      "你先过去，我会在农场里做自己的事情。",
+    );
 
-    await act(async () => vi.advanceTimersByTimeAsync(2_000));
-    expect(buddy).not.toHaveClass("is-moving");
-    expect(container.querySelector(".farm-buddy-walk-cycle")).toBeNull();
+    await act(async () => vi.advanceTimersByTimeAsync(10_000));
+    expect(player).not.toHaveClass("is-moving");
+    expect(container.querySelector(".farm-player-walk-cycle")).toBeNull();
+    expect(
+      isFarmPointWalkable({
+        left: Number.parseFloat(player?.style.left ?? "0"),
+        top: Number.parseFloat(player?.style.top ?? "0"),
+      }),
+    ).toBe(true);
     expect(onBuddyLine).toHaveBeenLastCalledWith(
-      "到了。这里的风景好像也有一点不一样。",
+      "你到了。需要帮忙时，随时叫我。",
     );
   });
 });
