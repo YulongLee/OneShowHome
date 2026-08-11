@@ -29,6 +29,9 @@ describe("BuddyOnboarding", () => {
       memories: [],
       diaries: [],
       gallery: [],
+      dailyTasks: [],
+      objectStates: [],
+      homeProgress: { leafPoints: 0, activeDays: 0 },
       settings: { soundEnabled: true },
     };
     vi.mocked(createDesktopBuddy).mockResolvedValue(snapshot);

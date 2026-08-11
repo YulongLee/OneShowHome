@@ -39,18 +39,41 @@ export type DesktopDiary = {
 
 export type GalleryPhoto = { id: number; path: string; createdAt: number };
 
+export type DailyTask = {
+  id: string;
+  action: string;
+  title: string;
+  description: string;
+  target: number;
+  progress: number;
+  reward: number;
+  claimed: boolean;
+};
+
+export type HomeObjectState = {
+  objectId: string;
+  interactionCount: number;
+  level: number;
+  lastInteractedAt: number;
+};
+
 export type DesktopSnapshot = {
   profile: BuddyProfile | null;
   state: BuddyState | null;
   memories: DesktopMemory[];
   diaries: DesktopDiary[];
   gallery: GalleryPhoto[];
+  dailyTasks: DailyTask[];
+  objectStates: HomeObjectState[];
+  homeProgress: { leafPoints: number; activeDays: number };
   settings: { soundEnabled: boolean };
 };
 
+const localDate = () => new Intl.DateTimeFormat("sv-SE").format(new Date());
 const temporal = () => ({
   nowMs: Date.now(),
   localHour: new Date().getHours(),
+  localDate: localDate(),
 });
 
 export const loadDesktopSnapshot = () =>
@@ -69,7 +92,14 @@ export const createDesktopBuddy = (
   });
 
 export const applyBuddyAction = (action: string) =>
-  invoke<DesktopSnapshot>("apply_buddy_action", { action, nowMs: Date.now() });
+  invoke<DesktopSnapshot>("apply_buddy_action", {
+    action,
+    nowMs: Date.now(),
+    localDate: localDate(),
+  });
+
+export const claimDailyTask = (taskId: string) =>
+  invoke<DesktopSnapshot>("claim_daily_task", { taskId });
 
 export const changeBuddyRoom = (room: BuddyState["location"]) =>
   invoke<DesktopSnapshot>("change_buddy_room", { room, nowMs: Date.now() });

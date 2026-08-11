@@ -63,12 +63,44 @@ pub struct DesktopSettings {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct DailyTask {
+    id: String,
+    action: String,
+    title: String,
+    description: String,
+    target: i64,
+    progress: i64,
+    reward: i64,
+    claimed: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeObjectState {
+    object_id: String,
+    interaction_count: i64,
+    level: i64,
+    last_interacted_at: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HomeProgress {
+    leaf_points: i64,
+    active_days: i64,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct DesktopSnapshot {
     profile: Option<BuddyProfile>,
     state: Option<BuddyState>,
     memories: Vec<Memory>,
     diaries: Vec<Diary>,
     gallery: Vec<GalleryPhoto>,
+    daily_tasks: Vec<DailyTask>,
+    object_states: Vec<HomeObjectState>,
+    home_progress: HomeProgress,
     settings: DesktopSettings,
 }
 
@@ -127,7 +159,26 @@ impl DesktopStore {
                    value TEXT NOT NULL,
                    updated_at INTEGER NOT NULL
                  );
-                 PRAGMA user_version=1;",
+                 CREATE TABLE IF NOT EXISTS daily_tasks (
+                   id TEXT PRIMARY KEY,
+                   local_date TEXT NOT NULL,
+                   action TEXT NOT NULL,
+                   title TEXT NOT NULL,
+                   description TEXT NOT NULL,
+                   target INTEGER NOT NULL CHECK (target BETWEEN 1 AND 20),
+                   progress INTEGER NOT NULL DEFAULT 0,
+                   reward INTEGER NOT NULL,
+                   claimed INTEGER NOT NULL DEFAULT 0,
+                   completed_at INTEGER
+                 );
+                 CREATE INDEX IF NOT EXISTS daily_tasks_date_idx ON daily_tasks(local_date);
+                 CREATE TABLE IF NOT EXISTS home_object_states (
+                   object_id TEXT PRIMARY KEY,
+                   interaction_count INTEGER NOT NULL DEFAULT 0,
+                   level INTEGER NOT NULL DEFAULT 1 CHECK (level BETWEEN 1 AND 5),
+                   last_interacted_at INTEGER NOT NULL
+                 );
+                 PRAGMA user_version=2;",
             )
             .map_err(|error| error.to_string())?;
         Ok(Self {
@@ -136,12 +187,18 @@ impl DesktopStore {
         })
     }
 
-    pub fn snapshot(&self, now_ms: i64, local_hour: u8) -> Result<DesktopSnapshot, String> {
+    pub fn snapshot(
+        &self,
+        now_ms: i64,
+        local_hour: u8,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
         let mut connection = self
             .connection
             .lock()
             .map_err(|_| "本地数据暂时不可用".to_string())?;
         tick_state(&mut connection, now_ms, local_hour)?;
+        ensure_daily_tasks(&connection, local_date)?;
         snapshot_from_connection(&connection)
     }
 
@@ -195,7 +252,12 @@ impl DesktopStore {
         snapshot_from_connection(&connection)
     }
 
-    pub fn apply_action(&self, action: &str, now_ms: i64) -> Result<DesktopSnapshot, String> {
+    pub fn apply_action(
+        &self,
+        action: &str,
+        now_ms: i64,
+        local_date: &str,
+    ) -> Result<DesktopSnapshot, String> {
         let (mood, energy_delta, location, activity, detail) = match action {
             "play" => ("happy", -4, None, "idle", "我们一起玩了一会儿"),
             "read" => (
@@ -212,8 +274,52 @@ impl DesktopStore {
                 "cooking",
                 "一起在厨房准备了食物",
             ),
+            "prepare" => (
+                "happy",
+                -2,
+                Some("kitchen"),
+                "cooking",
+                "认真准备了新鲜食材",
+            ),
+            "wash" => (
+                "calm",
+                -1,
+                Some("kitchen"),
+                "cooking",
+                "把餐具和水槽收拾干净",
+            ),
             "sleep" => ("calm", 25, Some("bedroom"), "sleeping", "回卧室好好休息"),
+            "write" => (
+                "calm",
+                -2,
+                Some("bedroom"),
+                "thinking",
+                "在书桌前写下今天的心情",
+            ),
+            "tidy" => (
+                "happy",
+                -2,
+                Some("bedroom"),
+                "idle",
+                "把衣柜和房间整理得整整齐齐",
+            ),
+            "water" => ("happy", -3, Some("garden"), "gardening", "给花圃认真浇了水"),
+            "harvest" => (
+                "happy",
+                -4,
+                Some("garden"),
+                "gardening",
+                "从菜园收获了新鲜蔬菜",
+            ),
+            "greenhouse" => ("calm", -2, Some("garden"), "gardening", "在温室照料了幼苗"),
             "garden" => ("happy", -3, Some("garden"), "gardening", "在花园照顾了植物"),
+            "fireplace" => (
+                "calm",
+                8,
+                Some("living_room"),
+                "idle",
+                "一起在壁炉边暖了暖手",
+            ),
             "rest" => (
                 "calm",
                 12,
@@ -227,6 +333,7 @@ impl DesktopStore {
             .connection
             .lock()
             .map_err(|_| "本地数据暂时不可用".to_string())?;
+        ensure_daily_tasks(&connection, local_date)?;
         let current_energy: i64 = connection
             .query_row("SELECT energy FROM buddy_state WHERE id=1", [], |row| {
                 row.get(0)
@@ -245,6 +352,43 @@ impl DesktopStore {
                 params![detail, now_ms],
             )
             .map_err(|error| error.to_string())?;
+        connection
+            .execute(
+                "INSERT INTO home_object_states (object_id, interaction_count, level, last_interacted_at)
+                 VALUES (?1, 1, 1, ?2)
+                 ON CONFLICT(object_id) DO UPDATE SET
+                   interaction_count=interaction_count+1,
+                   level=MIN(5, 1 + (interaction_count+1)/5),
+                   last_interacted_at=?2",
+                params![action, now_ms],
+            )
+            .map_err(|error| error.to_string())?;
+        connection
+            .execute(
+                "UPDATE daily_tasks SET
+                   progress=MIN(target, progress+1),
+                   completed_at=CASE WHEN progress+1>=target THEN COALESCE(completed_at, ?3) ELSE completed_at END
+                 WHERE local_date=?1 AND action=?2",
+                params![local_date, action, now_ms],
+            )
+            .map_err(|error| error.to_string())?;
+        snapshot_from_connection(&connection)
+    }
+
+    pub fn claim_task(&self, task_id: &str) -> Result<DesktopSnapshot, String> {
+        let connection = self
+            .connection
+            .lock()
+            .map_err(|_| "本地数据暂时不可用".to_string())?;
+        let changed = connection
+            .execute(
+                "UPDATE daily_tasks SET claimed=1 WHERE id=?1 AND progress>=target AND claimed=0",
+                [task_id],
+            )
+            .map_err(|error| error.to_string())?;
+        if changed == 0 {
+            return Err("任务还没有完成，或者奖励已经领取。".to_string());
+        }
         snapshot_from_connection(&connection)
     }
 
@@ -449,8 +593,9 @@ impl DesktopStore {
         destination: &str,
         now_ms: i64,
         local_hour: u8,
+        local_date: &str,
     ) -> Result<(), String> {
-        let snapshot = self.snapshot(now_ms, local_hour)?;
+        let snapshot = self.snapshot(now_ms, local_hour, local_date)?;
         let payload = serde_json::to_vec_pretty(&snapshot).map_err(|error| error.to_string())?;
         fs::write(destination, payload).map_err(|_| "无法导出 OneShow Home 数据".to_string())
     }
@@ -465,6 +610,8 @@ impl DesktopStore {
             .map_err(|error| error.to_string())?;
         for table in [
             "gallery_photos",
+            "home_object_states",
+            "daily_tasks",
             "diaries",
             "memories",
             "domain_events",
@@ -566,6 +713,22 @@ fn snapshot_from_connection(connection: &Connection) -> Result<DesktopSnapshot, 
     let memories = query_memories(connection)?;
     let diaries = query_diaries(connection)?;
     let gallery = query_gallery(connection)?;
+    let daily_tasks = query_daily_tasks(connection)?;
+    let object_states = query_object_states(connection)?;
+    let leaf_points = connection
+        .query_row(
+            "SELECT COALESCE(SUM(reward), 0) FROM daily_tasks WHERE claimed=1",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
+    let active_days = connection
+        .query_row(
+            "SELECT COUNT(DISTINCT local_date) FROM daily_tasks WHERE claimed=1",
+            [],
+            |row| row.get(0),
+        )
+        .map_err(|error| error.to_string())?;
     let sound_enabled = connection
         .query_row(
             "SELECT value FROM settings WHERE key='sound_enabled'",
@@ -582,8 +745,109 @@ fn snapshot_from_connection(connection: &Connection) -> Result<DesktopSnapshot, 
         memories,
         diaries,
         gallery,
+        daily_tasks,
+        object_states,
+        home_progress: HomeProgress {
+            leaf_points,
+            active_days,
+        },
         settings: DesktopSettings { sound_enabled },
     })
+}
+
+fn ensure_daily_tasks(connection: &Connection, local_date: &str) -> Result<(), String> {
+    if local_date.len() != 10
+        || !local_date
+            .chars()
+            .all(|character| character.is_ascii_digit() || character == '-')
+    {
+        return Err("本地日期格式不正确".to_string());
+    }
+    let templates = [
+        ("read", "午后阅读", "在客厅陪 Buddy 读一次书", 1, 12),
+        ("rest", "慢下来", "在沙发上休息一次", 1, 10),
+        ("fireplace", "壁炉时光", "和 Buddy 在壁炉边取暖", 1, 10),
+        ("cook", "今日料理", "在厨房完成一次烹饪", 1, 15),
+        ("prepare", "准备食材", "在料理台准备一次食材", 1, 12),
+        ("wash", "清爽厨房", "把水槽收拾干净", 1, 10),
+        ("sleep", "好好休息", "让 Buddy 回卧室睡一觉", 1, 12),
+        ("write", "写下心情", "在书桌前写一次心情", 1, 12),
+        ("tidy", "整理房间", "整理一次卧室衣柜", 1, 10),
+        ("water", "花儿喝水", "给花圃浇一次水", 1, 12),
+        ("harvest", "小小收获", "从菜园收获一次蔬菜", 1, 15),
+        ("greenhouse", "照料幼苗", "去温室照料一次幼苗", 1, 12),
+    ];
+    let seed = local_date.bytes().map(usize::from).sum::<usize>();
+    for step in [0, 4, 8] {
+        let (action, title, description, target, reward) =
+            templates[(seed + step) % templates.len()];
+        connection
+            .execute(
+                "INSERT OR IGNORE INTO daily_tasks
+                 (id, local_date, action, title, description, target, progress, reward, claimed)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, ?7, 0)",
+                params![
+                    format!("{local_date}-{action}"),
+                    local_date,
+                    action,
+                    title,
+                    description,
+                    target,
+                    reward
+                ],
+            )
+            .map_err(|error| error.to_string())?;
+    }
+    Ok(())
+}
+
+fn query_daily_tasks(connection: &Connection) -> Result<Vec<DailyTask>, String> {
+    let mut statement = connection
+        .prepare(
+            "SELECT id, action, title, description, target, progress, reward, claimed
+             FROM daily_tasks WHERE local_date=(SELECT MAX(local_date) FROM daily_tasks)
+             ORDER BY id ASC",
+        )
+        .map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok(DailyTask {
+                id: row.get(0)?,
+                action: row.get(1)?,
+                title: row.get(2)?,
+                description: row.get(3)?,
+                target: row.get(4)?,
+                progress: row.get(5)?,
+                reward: row.get(6)?,
+                claimed: row.get::<_, i64>(7)? != 0,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    Ok(rows)
+}
+
+fn query_object_states(connection: &Connection) -> Result<Vec<HomeObjectState>, String> {
+    let mut statement = connection
+        .prepare(
+            "SELECT object_id, interaction_count, level, last_interacted_at
+             FROM home_object_states ORDER BY last_interacted_at DESC",
+        )
+        .map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok(HomeObjectState {
+                object_id: row.get(0)?,
+                interaction_count: row.get(1)?,
+                level: row.get(2)?,
+                last_interacted_at: row.get(3)?,
+            })
+        })
+        .map_err(|error| error.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|error| error.to_string())?;
+    Ok(rows)
 }
 
 fn query_memories(connection: &Connection) -> Result<Vec<Memory>, String> {
@@ -653,9 +917,9 @@ mod tests {
         let store = DesktopStore::open(directory.clone()).unwrap();
         let created = store.create_buddy("Milo", "milo", "warm", 1_000).unwrap();
         assert_eq!(created.profile.unwrap().name, "Milo");
-        let played = store.apply_action("play", 2_000).unwrap();
+        let played = store.apply_action("play", 2_000, "2026-08-11").unwrap();
         assert_eq!(played.state.unwrap().mood, "happy");
-        let restored = store.snapshot(10 * 3_600_000, 23).unwrap();
+        let restored = store.snapshot(10 * 3_600_000, 23, "2026-08-11").unwrap();
         let state = restored.state.unwrap();
         assert_eq!(state.location, "bedroom");
         assert_eq!(state.activity, "sleeping");
@@ -670,12 +934,32 @@ mod tests {
         let _ = std::fs::remove_dir_all(&directory);
         let store = DesktopStore::open(directory.clone()).unwrap();
         store.create_buddy("Milo", "milo", "warm", 1_000).unwrap();
-        store.apply_action("garden", 2_000).unwrap();
+        store.apply_action("garden", 2_000, "2026-08-11").unwrap();
         let first = store.generate_diary("2026-08-11", 3_000).unwrap();
         let second = store.generate_diary("2026-08-11", 4_000).unwrap();
         assert_eq!(first.diaries.len(), 1);
         assert_eq!(second.diaries.len(), 1);
         assert!(second.diaries[0].content.contains("花园"));
+        let _ = std::fs::remove_dir_all(directory);
+    }
+
+    #[test]
+    fn daily_tasks_progress_claim_and_objects_level_up() {
+        let directory =
+            std::env::temp_dir().join(format!("oneshow-home-tasks-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        let store = DesktopStore::open(directory.clone()).unwrap();
+        store.create_buddy("Milo", "milo", "warm", 1_000).unwrap();
+        let initial = store.snapshot(1_000, 10, "2026-08-11").unwrap();
+        assert_eq!(initial.daily_tasks.len(), 3);
+        let action = initial.daily_tasks[0].action.clone();
+        let task_id = initial.daily_tasks[0].id.clone();
+        let progressed = store.apply_action(&action, 2_000, "2026-08-11").unwrap();
+        assert_eq!(progressed.daily_tasks[0].progress, 1);
+        assert_eq!(progressed.object_states[0].interaction_count, 1);
+        let claimed = store.claim_task(&task_id).unwrap();
+        assert!(claimed.daily_tasks[0].claimed);
+        assert!(claimed.home_progress.leaf_points > 0);
         let _ = std::fs::remove_dir_all(directory);
     }
 }

@@ -87,8 +87,9 @@ fn load_desktop_snapshot(
     store: State<'_, DesktopStore>,
     now_ms: i64,
     local_hour: u8,
+    local_date: String,
 ) -> Result<DesktopSnapshot, String> {
-    store.snapshot(now_ms, local_hour)
+    store.snapshot(now_ms, local_hour, &local_date)
 }
 
 #[tauri::command]
@@ -107,8 +108,17 @@ fn apply_buddy_action(
     store: State<'_, DesktopStore>,
     action: String,
     now_ms: i64,
+    local_date: String,
 ) -> Result<DesktopSnapshot, String> {
-    store.apply_action(&action, now_ms)
+    store.apply_action(&action, now_ms, &local_date)
+}
+
+#[tauri::command]
+fn claim_daily_task(
+    store: State<'_, DesktopStore>,
+    task_id: String,
+) -> Result<DesktopSnapshot, String> {
+    store.claim_task(&task_id)
 }
 
 #[tauri::command]
@@ -187,8 +197,9 @@ fn export_desktop_data(
     destination: String,
     now_ms: i64,
     local_hour: u8,
+    local_date: String,
 ) -> Result<(), String> {
-    store.export_data(&destination, now_ms, local_hour)
+    store.export_data(&destination, now_ms, local_hour, &local_date)
 }
 
 #[tauri::command]
@@ -291,6 +302,7 @@ pub fn run() {
             load_desktop_snapshot,
             create_desktop_buddy,
             apply_buddy_action,
+            claim_daily_task,
             change_buddy_room,
             add_desktop_memory,
             delete_desktop_memory,

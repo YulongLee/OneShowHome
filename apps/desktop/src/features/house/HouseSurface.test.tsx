@@ -35,6 +35,9 @@ describe("HouseSurface", () => {
       memories: [],
       diaries: [],
       gallery: [],
+      dailyTasks: [],
+      objectStates: [],
+      homeProgress: { leafPoints: 0, activeDays: 0 },
       settings: { soundEnabled: true },
     });
   });

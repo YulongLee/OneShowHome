@@ -10,7 +10,6 @@ import {
   Heart,
   House,
   Images,
-  Leaf,
   MoonStars,
   Smiley,
   Sparkle,
@@ -19,7 +18,6 @@ import {
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import buddyAvatar from "../../assets/house/buddy-avatar.png";
 import doorwayScene from "../../assets/house/cottage-doorway.png";
-import livingRoomScene from "../../assets/house/living-room.png";
 import { hideHome, onHomeEntry, showHouse } from "../../platform/desktop";
 import { syncBuddyProfile } from "../../services/backend";
 import {
@@ -37,6 +35,8 @@ import {
 import { BuddyOnboarding } from "../onboarding/BuddyOnboarding";
 import { ModelSettingsDialog } from "../settings/ModelSettingsDialog";
 import { HomeDialog, type HomeDialogKind } from "./HomeDialogs";
+import { DailyTaskBoard } from "./DailyTaskBoard";
+import { RoomStage, type RoomHotspot } from "./RoomStage";
 
 const rooms: Array<{
   id: BuddyState["location"];
@@ -61,25 +61,11 @@ const quickActions: Array<{
 ];
 
 const roomCopy = {
-  living_room: { title: "客厅", note: "适合聊天、读书和休息", symbol: "🛋️" },
-  kitchen: { title: "厨房", note: "一起准备今天的小餐点", symbol: "🍲" },
-  bedroom: { title: "卧室", note: "让 Buddy 安静恢复精力", symbol: "🛏️" },
-  garden: { title: "花园", note: "照顾植物，看看它们的变化", symbol: "🌿" },
+  living_room: { title: "客厅", note: "适合聊天、读书和休息" },
+  kitchen: { title: "厨房", note: "一起准备今天的小餐点" },
+  bedroom: { title: "卧室", note: "让 Buddy 安静恢复精力" },
+  garden: { title: "花园", note: "照顾植物，看看它们的变化" },
 } as const;
-
-const actions: Record<
-  BuddyState["location"],
-  Array<{ id: string; label: string }>
-> = {
-  living_room: [
-    { id: "play", label: "陪我玩" },
-    { id: "read", label: "一起读书" },
-    { id: "rest", label: "沙发休息" },
-  ],
-  kitchen: [{ id: "cook", label: "一起做饭" }],
-  bedroom: [{ id: "sleep", label: "好好睡觉" }],
-  garden: [{ id: "garden", label: "照顾植物" }],
-};
 
 const moodLabels = {
   happy: "心情很好",
@@ -95,6 +81,21 @@ const activityLines = {
   thinking: "我在整理今天的小小心事。",
 } as const;
 
+const actionLines: Record<string, string> = {
+  rest: "沙发软软的。我们就这样安静待一会儿吧。",
+  read: "我找到很喜欢的一页，要不要一起读？",
+  fireplace: "火光暖暖的，连今天的疲惫也慢慢融化了。",
+  cook: "闻起来好香，今天的料理一定会很成功。",
+  prepare: "食材准备好了，接下来就交给我吧。",
+  wash: "厨房变得亮晶晶，心情也清爽起来了。",
+  sleep: "晚安，我先做一个关于小屋的好梦。",
+  write: "今天的心情已经好好写下来了。",
+  tidy: "房间整齐以后，好像也多了一点呼吸的空间。",
+  water: "你听，花儿喝到水以后好像在说谢谢。",
+  harvest: "今天收获得真不错，晚上可以做新鲜料理了。",
+  greenhouse: "幼苗又长高了一点点，我们明天再来看它。",
+};
+
 export function HomeSurface() {
   const [snapshot, setSnapshot] = useState<DesktopSnapshot | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -107,6 +108,8 @@ export function HomeSurface() {
   const [modelSettingsOpen, setModelSettingsOpen] = useState(false);
   const [modelSettings, setModelSettings] =
     useState<ModelSettings>(loadModelSettings);
+  const [activeAction, setActiveAction] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<string | null>(null);
   const [clock, setClock] = useState(new Date());
   const transitionTimer = useRef<number | null>(null);
 
@@ -174,6 +177,7 @@ export function HomeSurface() {
     try {
       const next = await changeBuddyRoom(nextRoom);
       setSnapshot(next);
+      setActiveAction(null);
       if (next.state) setBuddyLine(activityLines[next.state.activity]);
       setNotice(null);
     } catch {
@@ -181,15 +185,40 @@ export function HomeSurface() {
     }
   };
 
-  const interact = async (action: string, label: string) => {
-    setNotice(`正在${label}…`);
+  const interact = async (hotspot: RoomHotspot) => {
+    if (busyAction) return;
+    setActiveAction(hotspot.action);
+    setBusyAction(hotspot.action);
+    setBuddyLine(`让我来${hotspot.hint}…`);
+    setNotice(null);
     try {
-      const next = await applyBuddyAction(action);
+      const [next] = await Promise.all([
+        applyBuddyAction(hotspot.action),
+        new Promise((resolve) => window.setTimeout(resolve, 850)),
+      ]);
+      const newlyCompleted = next.dailyTasks.find((task) => {
+        const previous = snapshot?.dailyTasks.find(
+          (item) => item.id === task.id,
+        );
+        return (
+          task.progress >= task.target &&
+          (previous?.progress ?? 0) < task.target
+        );
+      });
       setSnapshot(next);
-      if (next.state) setBuddyLine(activityLines[next.state.activity]);
-      setNotice(`${profile?.name ?? "Buddy"} 很喜欢和你${label}。`);
+      setBuddyLine(
+        actionLines[hotspot.action] ??
+          activityLines[next.state?.activity ?? "idle"],
+      );
+      setNotice(
+        newlyCompleted
+          ? `今日任务「${newlyCompleted.title}」完成了！`
+          : `${hotspot.label}的羁绊增加了。`,
+      );
     } catch {
       setNotice("这次互动没有完成，请再试一次。");
+    } finally {
+      setBusyAction(null);
     }
   };
 
@@ -250,15 +279,14 @@ export function HomeSurface() {
 
   return (
     <main className={`home-shell room-${room}${isNight ? " is-night" : ""}`}>
-      <img
-        alt={`温暖的 OneShow Home ${roomInfo.title}`}
-        className="home-scene"
-        src={livingRoomScene}
+      <RoomStage
+        activeAction={activeAction}
+        busyAction={busyAction}
+        objectStates={snapshot.objectStates}
+        onInteract={(hotspot) => void interact(hotspot)}
+        room={room}
+        state={state}
       />
-      <div aria-hidden="true" className="scene-shade" />
-      <div aria-hidden="true" className="room-atmosphere">
-        <span>{roomInfo.symbol}</span>
-      </div>
 
       <header className="home-titlebar">
         <div className="brand-lockup">
@@ -335,18 +363,11 @@ export function HomeSurface() {
         ))}
       </aside>
 
-      <section aria-label="房间互动" className="interaction-palette">
-        <Leaf weight="fill" />
-        {actions[room].map((action) => (
-          <button
-            key={action.id}
-            onClick={() => void interact(action.id, action.label)}
-            type="button"
-          >
-            {action.label}
-          </button>
-        ))}
-      </section>
+      <DailyTaskBoard
+        onNotice={setNotice}
+        onSnapshot={setSnapshot}
+        snapshot={snapshot}
+      />
 
       <section aria-live="polite" className="buddy-bubble">
         <Smiley weight="fill" />

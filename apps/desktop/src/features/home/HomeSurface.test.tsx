@@ -67,6 +67,9 @@ const snapshot = {
   memories: [],
   diaries: [],
   gallery: [],
+  dailyTasks: [],
+  objectStates: [],
+  homeProgress: { leafPoints: 0, activeDays: 0 },
   settings: { soundEnabled: true },
 };
 
@@ -100,13 +103,19 @@ describe("HomeSurface", () => {
 
   it("changes rooms and runs a Buddy interaction", async () => {
     const user = userEvent.setup();
+    vi.mocked(changeBuddyRoom).mockResolvedValueOnce({
+      ...snapshot,
+      state: { ...snapshot.state, location: "kitchen", activity: "cooking" },
+    });
     render(<HomeSurface />);
 
     await user.click(await screen.findByRole("button", { name: "厨房" }));
     expect(changeBuddyRoom).toHaveBeenCalledWith("kitchen");
 
-    await user.click(screen.getByRole("button", { name: "一起读书" }));
-    expect(applyBuddyAction).toHaveBeenCalledWith("read");
+    await user.click(
+      await screen.findByRole("button", { name: "炉灶：做一道暖心料理" }),
+    );
+    expect(applyBuddyAction).toHaveBeenCalledWith("cook");
   });
 
   it("returns to the desktop house", async () => {
