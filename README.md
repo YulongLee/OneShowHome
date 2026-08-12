@@ -6,13 +6,13 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 
 ## 当前阶段
 
-项目处于 macOS MVP 的首条联网陪伴链路开发阶段。
+项目处于 macOS MVP 的室内数字生命世界开发阶段。
 
 当前优先级：
 
-1. 验证透明桌面小屋的 macOS 窗口体验；
-2. 保证断网时桌面小屋和基础 Buddy 体验可用；
-3. 拉通服务端聊天、用户数据、Admin 模型配置；
+1. 完成 Godot 2.5D Home Runtime：客厅、厨房、卧室；
+2. 完成角色移动、镜头、碰撞、家具交互和 Buddy 基础行为；
+3. 保证断网时桌面小屋和基础 Buddy 体验可用；
 4. 完成签名、公证和外部测试版本。
 
 暂不开发多人社交、Town、World、经济、商店、支付、云同步和多 Buddy。
@@ -38,10 +38,11 @@ OneShow Home 是一款住在 macOS 桌面里的数字陪伴产品。用户拥有
 ## 技术方向
 
 ```text
-Tauri v2 + React + TypeScript + Rust + Node.js + PostgreSQL
+Tauri v2 + Godot 4.x + React + TypeScript + Rust + Node.js + PostgreSQL
 ```
 
 - macOS 14+、Apple Silicon 优先；
+- Tauri 负责桌面小屋、托盘和系统能力，Godot 负责 Home 游戏运行时；
 - 本地优先，小屋与基础生活体验不依赖在线服务；
 - AI Provider 由 Admin 配置，供应商密钥不进入客户端；
 - 高级用户可让 Buddy 直接使用 Mac 上的 Ollama 或 LM Studio，本地消息不会静默上传；
@@ -58,17 +59,25 @@ Tauri v2 + React + TypeScript + Rust + Node.js + PostgreSQL
 - pnpm；
 - Rust stable，包含 `rustfmt` 和 `clippy`；
 - Apple Command Line Tools。
+- Godot 4.x。
 
 ```bash
 pnpm install
 pnpm verify
 pnpm dev
+pnpm game:dev
 ```
 
 生成本地 macOS `.app`：
 
 ```bash
 pnpm build:app
+```
+
+Godot 室内 Runtime 校验：
+
+```bash
+pnpm game:check
 ```
 
 当前验证结果与人工验收项目见 [Phase 0 技术验证记录](docs/engineering/phase-0-validation.md)。

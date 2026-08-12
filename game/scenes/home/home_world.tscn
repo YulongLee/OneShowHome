@@ -1,0 +1,109 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/home_world.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/iso_room.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/characters/buddy.tscn" id="4"]
+
+[sub_resource type="TileSet" id="HomeTileSet"]
+tile_size = Vector2i(84, 42)
+tile_shape = 1
+tile_layout = 5
+
+[node name="HomeWorld" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+offset_left = -1280.0
+offset_top = -720.0
+offset_right = 1280.0
+offset_bottom = 720.0
+color = Color(0.035, 0.055, 0.045, 1)
+mouse_filter = 2
+
+[node name="World" type="Node2D" parent="."]
+position = Vector2(640, 390)
+
+[node name="Room" type="Node2D" parent="World"]
+script = ExtResource("2")
+
+[node name="FloorTiles" type="TileMapLayer" parent="World"]
+tile_set = SubResource("HomeTileSet")
+y_sort_enabled = true
+
+[node name="Entities" type="Node2D" parent="World"]
+y_sort_enabled = true
+
+[node name="Furniture" type="Node2D" parent="World/Entities"]
+
+[node name="Walls" type="Node2D" parent="World"]
+
+[node name="Player" parent="World/Entities" instance=ExtResource("3")]
+
+[node name="Buddy" parent="World/Entities" instance=ExtResource("4")]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TopBar" type="PanelContainer" parent="HUD"]
+offset_left = 28.0
+offset_top = 24.0
+offset_right = 488.0
+offset_bottom = 104.0
+
+[node name="Content" type="VBoxContainer" parent="HUD/TopBar"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="HUD/TopBar/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.22, 0.28, 0.18, 1)
+theme_override_font_sizes/font_size = 22
+text = "客厅 Living Room"
+vertical_alignment = 1
+
+[node name="Subtitle" type="Label" parent="HUD/TopBar/Content"]
+layout_mode = 2
+text = "适合聊天、读书和休息"
+vertical_alignment = 1
+
+[node name="Status" type="PanelContainer" parent="HUD"]
+offset_left = 928.0
+offset_top = 24.0
+offset_right = 1252.0
+offset_bottom = 104.0
+
+[node name="Content" type="VBoxContainer" parent="HUD/Status"]
+layout_mode = 2
+
+[node name="State" type="Label" parent="HUD/Status/Content"]
+layout_mode = 2
+text = "Player · Idle"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Mood" type="Label" parent="HUD/Status/Content"]
+layout_mode = 2
+text = "Buddy · 开心 · 精力 80%"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="RoomButtons" type="HBoxContainer" parent="HUD"]
+offset_left = 454.0
+offset_top = 28.0
+offset_right = 826.0
+offset_bottom = 76.0
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Prompt" type="Label" parent="HUD"]
+offset_left = 338.0
+offset_top = 654.0
+offset_right = 942.0
+offset_bottom = 698.0
+theme_override_colors/font_color = Color(1, 0.965, 0.82, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.75)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 16
+text = "WASD / 方向键移动 · 靠近家具按 E · 1/2/3 切换房间"
+horizontal_alignment = 1
+vertical_alignment = 1

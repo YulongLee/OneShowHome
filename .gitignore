@@ -26,6 +26,7 @@ coverage/
 .qa/
 .vite/
 target/
+.godot/
 apps/desktop/src-tauri/gen/
 
 # Tauri signing and local release configuration
